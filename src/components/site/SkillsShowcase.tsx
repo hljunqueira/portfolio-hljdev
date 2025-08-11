@@ -127,7 +127,7 @@ function MarqueeCards({ items, reverse = false, durationMs = 32000 }: MarqueeCar
   const styleVars = { "--marquee-duration": `${durationMs}ms` } as CSSProperties;
 
   const Tile = ({ name, ghost = false }: { name: string; ghost?: boolean }) => (
-    <div className="min-w-[180px]">
+    <div className="min-w-[150px] sm:min-w-[170px] md:min-w-[180px]">
       <div
         className={`group rounded-xl border bg-secondary/40 p-6 text-center transition-all ${
           ghost ? "" : "hover:bg-secondary/60 hover:shadow-lg hover:ring-1 hover:ring-primary/30 hover-glow hover-lift"
@@ -144,7 +144,7 @@ function MarqueeCards({ items, reverse = false, durationMs = 32000 }: MarqueeCar
   return (
     <div className={`marquee marquee-mask ${reverse ? "marquee-reverse" : ""}`} style={styleVars}>
       <div className="marquee-inner">
-        <div className="flex items-stretch gap-6">
+        <div className="flex items-stretch gap-4 sm:gap-6">
           {items.map((t) => (
             <Tile key={`a-${t.name}`} name={t.name} />
           ))}

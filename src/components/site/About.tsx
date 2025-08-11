@@ -25,7 +25,7 @@ export function About() {
           <p>
             Sou formado em Redes de Computadores e atuo como Analista de Suporte Jr. na Goomer (Food Service),
             unindo visão técnica de infraestrutura com foco em produto para entregar sistemas web estáveis e integrações
-            eficientes. Baseado em Santa Catarina, Brasil.
+            eficientes.
           </p>
           <div>
             <p className="mb-2">No dia a dia, trabalho com:</p>

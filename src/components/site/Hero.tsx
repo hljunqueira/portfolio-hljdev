@@ -34,7 +34,7 @@ export function Hero() {
         <meta name="description" content="Landing pages, sistemas e automações entregues em etapas curtas, com comunicação direta e suporte contínuo." />
         <link rel="canonical" href="/" />
       </Helmet>
-      <div className="grid md:grid-cols-2 items-center gap-10">
+      <div className="grid md:grid-cols-2 items-center gap-8 md:gap-10">
         <div className="text-left animate-enter font-inter">
           <motion.p
             initial={{ opacity: 0, y: 8 }}

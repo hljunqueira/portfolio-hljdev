@@ -77,9 +77,9 @@ export function Experience() {
           whileInView="show"
           viewport={{ once: true }}
           variants={fadeUp}
-          className="hidden md:flex w-24 relative"
+          className="hidden md:flex w-20 md:w-24 relative"
         >
-          <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-[hsl(var(--primary)/0.3)] to-white/10" />
+          <div className="absolute left-2.5 md:left-3 top-0 bottom-0 w-px bg-gradient-to-b from-[hsl(var(--primary)/0.3)] to-white/10" />
           <div className="ml-6 flex flex-col justify-between h-full py-2">
             {(["24/25", "22/23", "21/22"] as const).map((label) => (
               <div key={label} className="flex items-center gap-2">

@@ -66,7 +66,7 @@ export function ProjectsGrid({ projects = defaultProjects }: { projects?: Projec
         <h2 className="text-2xl md:text-3xl font-bold">Cases de Sucessos</h2>
         <p className="text-muted-foreground mt-1">Resultados entregues para clientes reais.</p>
       </motion.header>
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2">
         {projects.map((p, i) => (
           <motion.div
             key={p.title}

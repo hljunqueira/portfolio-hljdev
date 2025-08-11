@@ -28,7 +28,7 @@ export function LeadForm() {
         <h2 id="lead-title" className="text-2xl md:text-3xl font-bold">Vamos conversar</h2>
         <p className="text-muted-foreground">Envie seu contato e ideia de projeto.</p>
       </header>
-      <form onSubmit={onSubmit} className="grid gap-4 max-w-xl mx-auto">
+      <form onSubmit={onSubmit} className="grid gap-3 sm:gap-4 max-w-xl mx-auto">
         <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
         <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <Textarea placeholder="Mensagem" value={mensagem} onChange={(e) => setMensagem(e.target.value)} required rows={5} />
