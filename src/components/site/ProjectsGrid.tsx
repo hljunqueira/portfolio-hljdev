@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -16,41 +16,41 @@ export type Project = {
 
 const defaultProjects: Project[] = [
   {
-    title: "JK Construções",
+    title: "JK ConstruÃ§Ãµes",
     description:
-      "Site institucional para construtora, apresentando serviços, portfólio de obras e contato rápido.",
+      "Site institucional para construtora, apresentando serviÃ§os, portfÃ³lio de obras e contato rÃ¡pido.",
     image: "/lovable-uploads/jk-print.png",
-    status: "Produção",
-    featuresLeft: ["Seções: Nossa História, Serviços, Projetos", "Orçamento e contato via WhatsApp"],
-    featuresRight: ["Design responsivo", "SEO básico"],
+    status: "ProduÃ§Ã£o",
+    featuresLeft: ["SeÃ§Ãµes: Nossa HistÃ³ria, ServiÃ§os, Projetos", "OrÃ§amento e contato via WhatsApp"],
+    featuresRight: ["Design responsivo", "SEO bÃ¡sico"],
     techs: ["JavaScript", "CSS", "HTML", "SCSS"],
     liveDemo: "https://jkconstrucoes.com.br",
   },
   {
-    title: "Sistema de RH e Recrutamento – Isabel Cunha RH",
+    title: "Sistema de RH e Recrutamento â€“ Isabel Cunha RH",
     description:
-      "Plataforma de RH e recrutamento com foco em triagem de candidatos e gestão de processos seletivos para a consultoria Isabel Cunha RH.",
+      "Plataforma de RH e recrutamento com foco em triagem de candidatos e gestÃ£o de processos seletivos para a consultoria Isabel Cunha RH.",
     image: "/lovable-uploads/isabel-print.png",
-    status: "Produção",
-    featuresLeft: ["Gestão de Vagas e Candidatos", "Pipeline de Recrutamento"],
-    featuresRight: ["Área do Candidato/Empresa", "Banco de Talentos"],
+    status: "ProduÃ§Ã£o",
+    featuresLeft: ["GestÃ£o de Vagas e Candidatos", "Pipeline de Recrutamento"],
+    featuresRight: ["Ãrea do Candidato/Empresa", "Banco de Talentos"],
     techs: ["TypeScript", "JavaScript", "PLpgSQL", "Outros"],
     liveDemo: "https://isabelcunharh.com.br",
   },
   {
-    title: "Dumar Móveis Planejados",
+    title: "Dumar MÃ³veis Planejados",
     description:
-      "Site institucional com portfólio de móveis planejados, foco em captação de leads e apresentação de projetos.",
+      "Site institucional com portfÃ³lio de mÃ³veis planejados, foco em captaÃ§Ã£o de leads e apresentaÃ§Ã£o de projetos.",
     image: "/lovable-uploads/dumar-print.png",
-    status: "Produção",
-    featuresLeft: ["Portfólio de projetos", "Contato rápido"],
-    featuresRight: ["Design responsivo", "SEO básico"],
+    status: "ProduÃ§Ã£o",
+    featuresLeft: ["PortfÃ³lio de projetos", "Contato rÃ¡pido"],
+    featuresRight: ["Design responsivo", "SEO bÃ¡sico"],
     techs: ["TypeScript", "CSS", "HTML"],
     liveDemo: "https://dumarplanejados.com.br",
   },
   {
-    title: "Portfólio Hlj.dev",
-    description: "Meu portfólio pessoal com projetos, habilidades e contato. Evoluindo continuamente.",
+    title: "PortfÃ³lio Hlj.dev",
+    description: "Meu portfÃ³lio pessoal com projetos, habilidades e contato. Evoluindo continuamente.",
     image: "/lovable-uploads/portfolio-hljdev.png",
     status: "Em desenvolvimento",
     techs: ["TypeScript", "CSS"],
@@ -64,7 +64,7 @@ export function ProjectsGrid({ projects = defaultProjects }: { projects?: Projec
     <section id="projects" className="max-w-5xl mx-auto px-4 py-16 scroll-mt-24">
       <motion.header className="mb-8" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
         <h2 className="text-2xl md:text-3xl font-bold">Cases de Sucessos</h2>
-        <p className="text-muted-foreground mt-1">Alguns dos trabalhos recentes.</p>
+        <p className="text-muted-foreground mt-1">Resultados entregues para clientes reais.</p>
       </motion.header>
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
         {projects.map((p, i) => (
@@ -84,7 +84,7 @@ export function ProjectsGrid({ projects = defaultProjects }: { projects?: Projec
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>{p.title}</CardTitle>
                   {p.status && (
-                    <span className={`text-xs rounded-full px-2 py-1 ${p.status === "Produção" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
+                    <span className={`text-xs rounded-full px-2 py-1 ${p.status === "ProduÃ§Ã£o" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
                       {p.status}
                     </span>
                   )}
