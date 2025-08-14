@@ -16,41 +16,41 @@ export type Project = {
 
 const defaultProjects: Project[] = [
   {
-    title: "JK ConstruÃ§Ãµes",
+    title: "JK Construções",
     description:
-      "Site institucional para construtora, apresentando serviÃ§os, portfÃ³lio de obras e contato rÃ¡pido.",
+      "Site institucional para construtora, apresentando serviços, portfólio de obras e contato rápido.",
     image: "/lovable-uploads/jk-print.png",
-    status: "ProduÃ§Ã£o",
-    featuresLeft: ["SeÃ§Ãµes: Nossa HistÃ³ria, ServiÃ§os, Projetos", "OrÃ§amento e contato via WhatsApp"],
-    featuresRight: ["Design responsivo", "SEO bÃ¡sico"],
+    status: "Produção",
+    featuresLeft: ["Seções: Nossa História, Serviços, Projetos", "Orçamento e contato via WhatsApp"],
+    featuresRight: ["Design responsivo", "SEO básico"],
     techs: ["JavaScript", "CSS", "HTML", "SCSS"],
     liveDemo: "https://jkconstrucoes.com.br",
   },
   {
-    title: "Sistema de RH e Recrutamento â€“ Isabel Cunha RH",
+    title: "Sistema de RH e Recrutamento — Isabel Cunha RH",
     description:
-      "Plataforma de RH e recrutamento com foco em triagem de candidatos e gestÃ£o de processos seletivos para a consultoria Isabel Cunha RH.",
+      "Plataforma de RH e recrutamento com foco em triagem de candidatos e gestão de processos seletivos para a consultoria Isabel Cunha RH.",
     image: "/lovable-uploads/isabel-print.png",
-    status: "ProduÃ§Ã£o",
-    featuresLeft: ["GestÃ£o de Vagas e Candidatos", "Pipeline de Recrutamento"],
-    featuresRight: ["Ãrea do Candidato/Empresa", "Banco de Talentos"],
+    status: "Produção",
+    featuresLeft: ["Gestão de Vagas e Candidatos", "Pipeline de Recrutamento"],
+    featuresRight: ["Área do Candidato/Empresa", "Banco de Talentos"],
     techs: ["TypeScript", "JavaScript", "PLpgSQL", "Outros"],
     liveDemo: "https://isabelcunharh.com.br",
   },
   {
-    title: "Dumar MÃ³veis Planejados",
+    title: "Dumar Móveis Planejados",
     description:
-      "Site institucional com portfÃ³lio de mÃ³veis planejados, foco em captaÃ§Ã£o de leads e apresentaÃ§Ã£o de projetos.",
+      "Site institucional com portfólio de móveis planejados, foco em captação de leads e apresentação de projetos.",
     image: "/lovable-uploads/dumar-print.png",
-    status: "ProduÃ§Ã£o",
-    featuresLeft: ["PortfÃ³lio de projetos", "Contato rÃ¡pido"],
-    featuresRight: ["Design responsivo", "SEO bÃ¡sico"],
+    status: "Produção",
+    featuresLeft: ["Portfólio de projetos", "Contato rápido"],
+    featuresRight: ["Design responsivo", "SEO básico"],
     techs: ["TypeScript", "CSS", "HTML"],
     liveDemo: "https://dumarplanejados.com.br",
   },
   {
-    title: "PortfÃ³lio Hlj.dev",
-    description: "Meu portfÃ³lio pessoal com projetos, habilidades e contato. Evoluindo continuamente.",
+    title: "Portfólio Hlj.dev",
+    description: "Meu portfólio pessoal com projetos, habilidades e contato. Evoluindo continuamente.",
     image: "/lovable-uploads/portfolio-hljdev.png",
     status: "Em desenvolvimento",
     techs: ["TypeScript", "CSS"],
@@ -84,7 +84,7 @@ export function ProjectsGrid({ projects = defaultProjects }: { projects?: Projec
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>{p.title}</CardTitle>
                   {p.status && (
-                    <span className={`text-xs rounded-full px-2 py-1 ${p.status === "ProduÃ§Ã£o" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
+                    <span className={`text-xs rounded-full px-2 py-1 ${p.status === "Produção" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
                       {p.status}
                     </span>
                   )}
