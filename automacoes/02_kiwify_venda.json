@@ -1,0 +1,199 @@
+{
+  "name": "HLJ Kiwify Vendas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kiwify-venda",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-kiwify",
+      "name": "Webhook — Kiwify Evento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "hlj-kiwify-venda"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// HLJ DEV — Kiwify Payload Normalizer v1.0\n// ============================================\n// Normaliza o payload bruto da Kiwify para\n// o schema de 'vendas' do Supabase.\n// Ref: Kiwify Webhook Docs (eventos: order_approved,\n//      order_refunded, order_chargeback)\n// ============================================\n\nconst body = $input.first().json.body;\n\n// Map de IDs de produto Kiwify para nomes legíveis\nconst PRODUTOS = {\n  'KIWIFY_PRODUCT_PROMPTS': 'Mega Pack de Prompts Elite',\n  'KIWIFY_PRODUCT_MASTERCLASS': 'I.A. Masterclass Pro',\n  'KIWIFY_PRODUCT_BUNDLE': 'Acesso Premium Total'\n};\n\n// Normaliza status do evento Kiwify\nconst STATUS_MAP = {\n  'order_approved': 'aprovado',\n  'order_refunded': 'reembolsado',\n  'order_chargeback': 'chargeback',\n  'order_rejected': 'rejeitado',\n  'order_waiting_payment': 'aguardando'\n};\n\nconst status = STATUS_MAP[body.type] || body.type;\nconst produtoId = body.product?.id || body.Product?.id || 'DESCONHECIDO';\nconst produtoNome = PRODUTOS[produtoId] || body.product?.name || produtoId;\n\nconst venda = {\n  kiwify_order_id: body.order?.id || body.id,\n  kiwify_event: body.type,\n  produto: produtoNome,\n  produto_id: produtoId,\n  cliente_nome: body.Customer?.name || body.customer?.name,\n  cliente_email: body.Customer?.email || body.customer?.email,\n  cliente_whatsapp: body.Customer?.mobile || body.customer?.mobile || null,\n  valor: parseFloat(body.order?.amount || body.amount || '0') / 100, // Kiwify envia em centavos\n  status: status,\n  metodo_pagamento: body.payment?.method || body.Payment?.method || 'unknown',\n  afiliado: body.Commissions?.AffiliateName || null,\n  created_at: new Date().toISOString()\n};\n\nreturn [{ json: venda }];"
+      },
+      "id": "node-normalizar-kiwify",
+      "name": "Normalizar Payload Kiwify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "conditions": [
+            {
+              "id": "condition-aprovado",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "aprovado",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "node-if-aprovado",
+      "name": "É Venda Aprovada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "vendas",
+        "columns": "kiwify_order_id,kiwify_event,produto,produto_id,cliente_nome,cliente_email,cliente_whatsapp,valor,status,metodo_pagamento,afiliado,created_at",
+        "additionalFields": {}
+      },
+      "id": "node-supabase-venda",
+      "name": "Supabase — Salvar Venda",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1020, 200],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CRED",
+          "name": "Supabase HLJ DEV"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mensagem de boas-vindas personalizada por produto\nconst venda = $('Normalizar Payload Kiwify').first().json;\n\nconst BOAS_VINDAS = {\n  'Mega Pack de Prompts Elite': `🚀 *Bem-vindo ao Pack Elite!*\\n\\nOi ${venda.cliente_nome?.split(' ')[0]}! Seu acesso ao *Mega Pack de Prompts* foi liberado!\\n\\n📦 Acesse seu material aqui: [LINK_DO_PACK]\\n\\nQualquer dúvida, é só responder nesta mensagem. Bons prompts! ⚡`,\n  'I.A. Masterclass Pro': `🧠 *Seu Acesso à Masterclass foi Liberado!*\\n\\nOi ${venda.cliente_nome?.split(' ')[0]}! Seja bem-vindo à *I.A. Masterclass Pro*!\\n\\n🎓 Acesse sua área de alunos: [LINK_DA_MASTERCLASS]\\n\\nO módulo 1 já está te esperando. Qualquer dúvida, responda aqui! 💪`,\n  'Acesso Premium Total': `🏆 *Acesso Premium Total Liberado!*\\n\\nOi ${venda.cliente_nome?.split(' ')[0]}! Você fez a escolha certa!\\n\\n📦 Pack de Prompts: [LINK_DO_PACK]\\n🎓 Masterclass: [LINK_DA_MASTERCLASS]\\n📋 Materiais Extras: [LINK_EXTRAS]\\n\\nVocê tem suporte prioritário. Responda aqui para qualquer dúvida! 🔝`\n};\n\nconst mensagem = BOAS_VINDAS[venda.produto] || `✅ Compra confirmada! Oi ${venda.cliente_nome}, obrigado pela sua compra de ${venda.produto}. Responda aqui para receber seu acesso.`;\n\n// Formata número para WhatsApp\nconst numero = venda.cliente_whatsapp\n  ? '55' + venda.cliente_whatsapp.replace(/\\D/g, '')\n  : null;\n\nreturn [{ json: { mensagem, numero, venda } }];"
+      },
+      "id": "node-boas-vindas",
+      "name": "Montar Mensagem Boas-Vindas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "condition-tem-whatsapp",
+              "leftValue": "={{ $json.numero }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "isNotEmpty" }
+            }
+          ]
+        }
+      },
+      "id": "node-tem-whatsapp",
+      "name": "Tem WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1280, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "number", "value": "={{ $json.numero }}" },
+            { "name": "text", "value": "={{ $json.mensagem }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-whatsapp-comprador",
+      "name": "WhatsApp — Boas-Vindas ao Comprador",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 380],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WHATSAPP_APIKEY_CRED",
+          "name": "Evolution API HLJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "number", "value": "={{ $env.SEU_WHATSAPP }}" },
+            { "name": "text", "value": "=💰 *VENDA APROVADA — HLJ DEV*\n━━━━━━━━━━━━━━━━━━━\n🛍️ *{{ $('Normalizar Payload Kiwify').first().json.produto }}*\n👤 {{ $('Normalizar Payload Kiwify').first().json.cliente_nome }}\n📧 {{ $('Normalizar Payload Kiwify').first().json.cliente_email }}\n💵 R$ {{ $('Normalizar Payload Kiwify').first().json.valor }}\n💳 {{ $('Normalizar Payload Kiwify').first().json.metodo_pagamento }}\n━━━━━━━━━━━━━━━━━━━\n✅ Dados salvos no Supabase." }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-whatsapp-notificacao-venda",
+      "name": "WhatsApp — Notificar Henrique",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WHATSAPP_APIKEY_CRED",
+          "name": "Evolution API HLJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": {}
+      },
+      "id": "node-resposta-kiwify",
+      "name": "Resposta OK para Kiwify",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [500, 500]
+    }
+  ],
+  "connections": {
+    "Webhook — Kiwify Evento": {
+      "main": [[{ "node": "Normalizar Payload Kiwify", "type": "main", "index": 0 }]]
+    },
+    "Normalizar Payload Kiwify": {
+      "main": [
+        [{ "node": "É Venda Aprovada?", "type": "main", "index": 0 }],
+        [{ "node": "Resposta OK para Kiwify", "type": "main", "index": 0 }]
+      ]
+    },
+    "É Venda Aprovada?": {
+      "main": [
+        [
+          { "node": "Supabase — Salvar Venda", "type": "main", "index": 0 },
+          { "node": "Montar Mensagem Boas-Vindas", "type": "main", "index": 0 },
+          { "node": "WhatsApp — Notificar Henrique", "type": "main", "index": 0 }
+        ],
+        [{ "node": "Supabase — Salvar Venda", "type": "main", "index": 0 }]
+      ]
+    },
+    "Montar Mensagem Boas-Vindas": {
+      "main": [[{ "node": "Tem WhatsApp?", "type": "main", "index": 0 }]]
+    },
+    "Tem WhatsApp?": {
+      "main": [
+        [{ "node": "WhatsApp — Boas-Vindas ao Comprador", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [{ "name": "HLJ DEV" }, { "name": "Vendas" }, { "name": "Kiwify" }],
+  "triggerCount": 1,
+  "versionId": "02-hlj-kiwify-vendas"
+}

@@ -69,7 +69,8 @@ export default {
         sm: 'calc(var(--radius) - 4px)'
       },
       fontFamily: {
-        inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        sans: ['Outfit', 'Space Grotesk', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['Fira Code', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       keyframes: {
         'accordion-down': {

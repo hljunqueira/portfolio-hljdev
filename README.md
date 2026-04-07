@@ -1,21 +1,24 @@
-# Hlj.dev — Portfólio
+# HLJ DEV — Site&Sistema | Automações | Agentes de IA
+**Link Oficial:** [hlj.dev](https://hlj.dev)
 
-Site pessoal desenvolvido com React + TypeScript, Vite, Tailwind CSS e shadcn/ui. 
+Site de engenharia de software e automação desenvolvido com React + TypeScript, Vite, Tailwind CSS e shadcn/ui. 
 
 ## Tecnologias
 - React, TypeScript, Vite
 - Tailwind CSS, shadcn/ui
-- Framer Motion (animações)
-- React Router
+- Supabase (Auth & Database)
+- Vercel CLI (Deploy Infrastructure)
+- Framer Motion (animações imersivas)
+- React Router (gerenciamento de rotas)
 
-## Seções
-- Hero (headline comercial, CTAs e micro‑prova)
-- Sobre Mim
-- Experiência (timeline)
-- Cases de Sucesso (projetos)
-- Habilidades Técnicas (grid com animação)
-- Formação
-- Contato (formulário)
+## Estrutura do Ecossistema
+- **Landing Page (Home)**: Conversão B2B com foco em Sistemas e IA.
+- **Soluções Corporativas**: Vitrine de serviços de engenharia e automação.
+- **IA Shop**: E-commerce de prompts, ferramentas e treinamentos.
+- **LeadChat**: Interface interativa de captação de clientes.
+- **Painel Administrativo**: Área restrita protegida por Supabase (Estilo Terminal).
+- **Links de Conversão**: Página de bio otimizada para redes sociais.
+- **Infraestrutura**: Backend real com Supabase Auth e PostgreSQL.
 
 ## Scripts
 `ash

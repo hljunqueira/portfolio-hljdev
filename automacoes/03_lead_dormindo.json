@@ -1,0 +1,130 @@
+{
+  "name": "HLJ Alerta Lead Parado",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-6"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron — Todo Dia às 9h (Seg-Sab)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nome, email, whatsapp, interesse, mensagem, lead_score, lead_temperatura, status, created_at, updated_at\nFROM public.leads\nWHERE\n  status IN ('novo', 'em_contato')\n  AND updated_at < NOW() - INTERVAL '48 hours'\nORDER BY lead_score DESC, updated_at ASC\nLIMIT 20;",
+        "additionalFields": {}
+      },
+      "id": "node-buscar-parados",
+      "name": "Supabase — Buscar Leads Parados",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 300],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CRED",
+          "name": "Supabase HLJ DEV"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "condition-tem-leads",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "node-if-tem-leads",
+      "name": "Tem Leads Parados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta relatório completo de leads parados para o WhatsApp\nconst leads = $input.all().map(item => item.json);\n\nconst emoji = (score) => score >= 70 ? '🔥' : score >= 45 ? '🌡️' : '❄️';\nconst horas = (updated_at) => {\n  const diff = Date.now() - new Date(updated_at).getTime();\n  return Math.floor(diff / (1000 * 60 * 60));\n};\n\nconst lista = leads.slice(0, 10).map((l, i) => {\n  const h = horas(l.updated_at);\n  const wa = l.whatsapp ? `wa.me/55${l.whatsapp.replace(/\\D/g,'')}` : 'sem WA';\n  return `${i+1}. ${emoji(l.lead_score)} *${l.nome}* (${l.lead_score}pts)\\n   📍 ${l.status.toUpperCase()} | ⏱️ ${h}h parado\\n   🎯 ${l.interesse}\\n   📲 ${wa}`;\n}).join('\\n\\n');\n\nconst mensagem = `⚠️ *ALERTA — LEADS PARADOS | HLJ DEV*\n━━━━━━━━━━━━━━━━━━━\n${leads.length} lead(s) sem ação há mais de 48h:\n\n${lista}\n━━━━━━━━━━━━━━━━━━━\n💡 Priorize os 🔥 primeiro!`;\n\nreturn [{ json: { mensagem, total: leads.length } }];"
+      },
+      "id": "node-relatorio",
+      "name": "Montar Relatório de Parados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "number", "value": "={{ $env.SEU_WHATSAPP }}" },
+            { "name": "text", "value": "={{ $json.mensagem }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-whatsapp-alerta-parado",
+      "name": "WhatsApp — Enviar Relatório",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1280, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "WHATSAPP_APIKEY_CRED",
+          "name": "Evolution API HLJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nenhum lead parado hoje — bom sinal!\nconsole.log('[HLJ DEV] Nenhum lead parado. Tudo em dia! ✅');\nreturn [{ json: { status: 'sem_leads_parados' } }];"
+      },
+      "id": "node-tudo-ok",
+      "name": "Log — Tudo em Dia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 400]
+    }
+  ],
+  "connections": {
+    "Cron — Todo Dia às 9h (Seg-Sab)": {
+      "main": [[{ "node": "Supabase — Buscar Leads Parados", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Buscar Leads Parados": {
+      "main": [[{ "node": "Tem Leads Parados?", "type": "main", "index": 0 }]]
+    },
+    "Tem Leads Parados?": {
+      "main": [
+        [{ "node": "Montar Relatório de Parados", "type": "main", "index": 0 }],
+        [{ "node": "Log — Tudo em Dia", "type": "main", "index": 0 }]
+      ]
+    },
+    "Montar Relatório de Parados": {
+      "main": [[{ "node": "WhatsApp — Enviar Relatório", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [{ "name": "HLJ DEV" }, { "name": "CRM" }, { "name": "Alertas" }],
+  "triggerCount": 0,
+  "versionId": "03-hlj-lead-dormindo"
+}

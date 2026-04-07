@@ -1,59 +1,49 @@
-﻿import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 
 export type Project = {
   title: string;
   description: string;
   image: string;
-  status?: string; // ex.: Em Desenvolvimento
-  featuresLeft?: string[]; // lista de bullets (coluna esquerda)
-  featuresRight?: string[]; // lista de bullets (coluna direita)
-  techs?: string[]; // chips de tecnologias
-  liveDemo?: string; // link demo
+  status?: string; 
+  featuresLeft?: string[]; 
+  featuresRight?: string[]; 
+  techs?: string[]; 
+  liveDemo?: string; 
 };
 
 const defaultProjects: Project[] = [
   {
-    title: "JK Construções",
-    description:
-      "Site institucional para construtora, apresentando serviços, portfólio de obras e contato rápido.",
-    image: "/lovable-uploads/jk-print.png",
-    status: "Produção",
-    featuresLeft: ["Seções: Nossa História, Serviços, Projetos", "Orçamento e contato via WhatsApp"],
-    featuresRight: ["Design responsivo", "SEO básico"],
-    techs: ["JavaScript", "CSS", "HTML", "SCSS"],
-    liveDemo: "https://jkconstrucoes.com.br",
-  },
-  {
-    title: "Sistema de RH e Recrutamento — Isabel Cunha RH",
-    description:
-      "Plataforma de RH e recrutamento com foco em triagem de candidatos e gestão de processos seletivos para a consultoria Isabel Cunha RH.",
+    title: "Triagem Automatizada e Gestão (Isabel Cunha RH)",
+    description: "A consultoria perdia semanas qualificando candidatos via WhatsApp e e-mail. Construímos uma plataforma do zero que automatiza e centraliza todo o pipeline de contratação.",
     image: "/lovable-uploads/isabel-print.png",
-    status: "Produção",
-    featuresLeft: ["Gestão de Vagas e Candidatos", "Pipeline de Recrutamento"],
-    featuresRight: ["Área do Candidato/Empresa", "Banco de Talentos"],
-    techs: ["TypeScript", "JavaScript", "PLpgSQL", "Outros"],
+    status: "Case de Sucesso",
+    featuresLeft: ["Poupou 80% do tempo dos Analistas de RH", "Portal Self-Service para Candidatos"],
+    featuresRight: ["Relatórios Instantâneos de Vagas", "Fim da desorganização de Currículos PDF"],
+    techs: ["SaaS Proprietário", "Alta Escalabilidade", "Dados Seguros"],
     liveDemo: "https://isabelcunharh.com.br",
   },
   {
-    title: "Dumar Móveis Planejados",
-    description:
-      "Site institucional com portfólio de móveis planejados, foco em captação de leads e apresentação de projetos.",
+    title: "Vitrine Digital Premium (Dumar Móveis)",
+    description: "Eles faziam projetos incríveis, mas a presença online amadora afastava clientes high-ticket. Entregamos uma vitrine profissional otimizada para capturar leads diretos no WhatsApp da equipe de vendas.",
     image: "/lovable-uploads/dumar-print.png",
-    status: "Produção",
-    featuresLeft: ["Portfólio de projetos", "Contato rápido"],
-    featuresRight: ["Design responsivo", "SEO básico"],
-    techs: ["TypeScript", "CSS", "HTML"],
+    status: "Impacto Imediato",
+    featuresLeft: ["Exibição de Projetos em Alta Resolucão", "Funil de Captação Rápida no Mobile"],
+    featuresRight: ["Carregamento Ultra-rápido (SEO Forte)"],
+    techs: ["Design UI/UX", "Plataforma Otimizada"],
     liveDemo: "https://dumarplanejados.com.br",
   },
   {
-    title: "Portfólio Hlj.dev",
-    description: "Meu portfólio pessoal com projetos, habilidades e contato. Evoluindo continuamente.",
-    image: "/lovable-uploads/portfolio-hljdev.png",
-    status: "Em desenvolvimento",
-    techs: ["TypeScript", "CSS"],
+    title: "Portal Digital de Serviços (JK Construções)",
+    description: "Construtora com forte atuação offline precisava de credibilidade instantânea para empresas e investidores avaliarem seu portfólio de grandes obras e solicitarem orçamento.",
+    image: "/lovable-uploads/jk-print.png",
+    status: "Operação Rápida",
+    featuresLeft: ["Catálogo de Obras Concluídas", "Botão de Ação Direto para Diretoria"],
+    featuresRight: ["Arquitetura de Conversão B2B"],
+    techs: ["Landing Page B2B", "Alta Conversão"],
+    liveDemo: "https://jkconstrucoes.com.br",
   },
   
 ];
