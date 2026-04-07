@@ -11,6 +11,11 @@ const Index = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Garantir que a página sempre carregue no topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -65,7 +70,7 @@ const Index = () => {
           <nav className="hidden md:flex items-center gap-8 text-sm relative z-20">
             <a href="#services" className={linkClass("services")}>Soluções</a>
             <Link to="/shop" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Ferramentas I.A.</Link>
-            <a href="#contact" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 uppercase tracking-tighter font-black">
+            <a href="#contact" className="inline-flex items-center justify-center rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 uppercase tracking-tighter font-black">
               Falar com Agente
             </a>
           </nav>
