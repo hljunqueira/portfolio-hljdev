@@ -1,0 +1,99 @@
+{
+    email hljunqueira@gmail.com
+}
+
+api.igimports.com.br {
+    reverse_proxy localhost:3001
+}
+
+# --- CONFIGURAÇÕES ZAPCAR ---
+api.appzapcar.com.br {
+    reverse_proxy localhost:3005
+}
+
+wa.appzapcar.com.br {
+    reverse_proxy localhost:8081
+}
+
+n8n.appzapcar.com.br {
+    reverse_proxy localhost:5679
+}
+
+appzapcar.com.br, www.appzapcar.com.br {
+    reverse_proxy https://frontend-m1jz9fhbz-henriques-projects-31af9234.vercel.app {
+        header_up Host frontend-m1jz9fhbz-henriques-projects-31af9234.vercel.app
+        header_up X-Real-Host {host}
+    }
+}
+
+doc.appzapcar.com.br {
+    rewrite * /api-docs{uri}
+    reverse_proxy localhost:3005
+}
+
+*.appzapcar.com.br {
+    tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+    reverse_proxy https://frontend-m1jz9fhbz-henriques-projects-31af9234.vercel.app {
+        header_up Host frontend-m1jz9fhbz-henriques-projects-31af9234.vercel.app
+        header_up X-Real-Host {host}
+    }
+}
+
+# --- CONFIGURAÇÕES MDR INFORMÁTICA ---
+http://supabase-mdr.76-13-171-93.sslip.io {
+    # CORS preflight handling for ALL routes
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        header Access-Control-Allow-Origin *
+        header Access-Control-Allow-Methods GET, POST, PUT, PATCH, DELETE, OPTIONS
+        header Access-Control-Allow-Headers *
+        header Access-Control-Max-Age 3600
+        respond 204
+    }
+
+    # REST API - PostgREST (has built-in CORS)
+    handle_path /rest/v1/* {
+        reverse_proxy 172.19.0.2:3000
+    }
+    
+    # Auth API - GoTrue (has built-in CORS)
+    handle_path /auth/v1/* {
+        reverse_proxy 172.19.0.4:9999
+    }
+    
+    # Default - Kong for other routes (may need CORS)
+    handle {
+        reverse_proxy localhost:8003
+    }
+}
+
+http://api-mdr.76-13-171-93.sslip.io {
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        header Access-Control-Allow-Origin *
+        header Access-Control-Allow-Methods GET, POST, PUT, PATCH, DELETE, OPTIONS
+        header Access-Control-Allow-Headers *
+        respond 204
+    }
+    
+    reverse_proxy localhost:3333
+}
+
+# --- CONFIGURACOES HLJ DEV ---
+admin.hljdev.com.br {
+    redir https://hljdev.com.br/admin
+}
+
+n8n.hljdev.com.br {
+    reverse_proxy localhost:3012
+}
+
+supabase.hljdev.com.br {
+    reverse_proxy localhost:3015
+}

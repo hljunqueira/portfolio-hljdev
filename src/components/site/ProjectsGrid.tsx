@@ -18,7 +18,7 @@ const defaultProjects: Project[] = [
   {
     title: "Triagem Automatizada e Gestão (Isabel Cunha RH)",
     description: "A consultoria perdia semanas qualificando candidatos via WhatsApp e e-mail. Construímos uma plataforma do zero que automatiza e centraliza todo o pipeline de contratação.",
-    image: "/lovable-uploads/isabel-print.png",
+    image: "/isabel-print.png",
     status: "Case de Sucesso",
     featuresLeft: ["Poupou 80% do tempo dos Analistas de RH", "Portal Self-Service para Candidatos"],
     featuresRight: ["Relatórios Instantâneos de Vagas", "Fim da desorganização de Currículos PDF"],
@@ -28,7 +28,7 @@ const defaultProjects: Project[] = [
   {
     title: "Vitrine Digital Premium (Dumar Móveis)",
     description: "Eles faziam projetos incríveis, mas a presença online amadora afastava clientes high-ticket. Entregamos uma vitrine profissional otimizada para capturar leads diretos no WhatsApp da equipe de vendas.",
-    image: "/lovable-uploads/dumar-print.png",
+    image: "/dumar-print.png",
     status: "Impacto Imediato",
     featuresLeft: ["Exibição de Projetos em Alta Resolucão", "Funil de Captação Rápida no Mobile"],
     featuresRight: ["Carregamento Ultra-rápido (SEO Forte)"],
@@ -38,7 +38,7 @@ const defaultProjects: Project[] = [
   {
     title: "Portal Digital de Serviços (JK Construções)",
     description: "Construtora com forte atuação offline precisava de credibilidade instantânea para empresas e investidores avaliarem seu portfólio de grandes obras e solicitarem orçamento.",
-    image: "/lovable-uploads/jk-print.png",
+    image: "/jk-print.png",
     status: "Operação Rápida",
     featuresLeft: ["Catálogo de Obras Concluídas", "Botão de Ação Direto para Diretoria"],
     featuresRight: ["Arquitetura de Conversão B2B"],

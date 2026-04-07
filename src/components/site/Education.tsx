@@ -20,13 +20,13 @@ const education: EducationItem[] = [
       "Pós‑graduação Lato Sensu (MBA) — Desenvolvimento Fullstack de Sistemas Modernos para Nuvem (Cloud Native)",
     school: "UNESC Digital",
     period: "fev/2025 — ago/2025",
-    logoSrc: "/lovable-uploads/unesc-digital.jpg",
+    logoSrc: "/unesc-digital.jpg",
   },
   {
     course: "Tecnólogo — Redes de Computadores",
     school: "Universidade Cruzeiro do Sul",
     period: "fev/2019 — abr/2021",
-    logoSrc: "/lovable-uploads/cruzeiro-edu.png",
+    logoSrc: "/cruzeiro-edu.png",
   },
 ];
 

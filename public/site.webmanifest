@@ -3,12 +3,12 @@
   "short_name": "Hlj.dev",
   "icons": [
     {
-      "src": "/lovable-uploads/hljdev-favicon.png",
+      "src": "/hljdev-favicon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/lovable-uploads/hljdev-favicon.png",
+      "src": "/hljdev-favicon.png",
       "sizes": "512x512",
       "type": "image/png"
     }

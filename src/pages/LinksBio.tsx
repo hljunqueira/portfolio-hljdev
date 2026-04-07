@@ -18,7 +18,7 @@ export default function LinksBio() {
           <div className="relative">
             <div className="absolute -inset-1 rounded-full blur-md bg-gradient-to-tr from-primary/40 to-primary/10" />
             <img 
-              src="/lovable-uploads/Eu-fundo%20vermelho.png" 
+              src="/Eu-fundo vermelho.png" 
               alt="HLJ DEV" 
               className="relative w-24 h-24 rounded-full border-2 border-background object-cover shadow-lg"
             />
