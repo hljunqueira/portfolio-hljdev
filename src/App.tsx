@@ -14,11 +14,8 @@ import Shop from "./pages/Shop";
 import LinksBio from "./pages/LinksBio";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPipeline from "./pages/admin/AdminPipeline";
-import AdminPropostas from "./pages/admin/AdminPropostas";
-import AdminVendas from "./pages/admin/AdminVendas";
+import AdminCampanhas from "./pages/admin/AdminCampanhas";
 import AdminProjetos from "./pages/admin/AdminProjetos";
-import AdminProdutos from "./pages/admin/AdminProdutos";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminTarefas from "./pages/admin/AdminTarefas";
 import AdminConfig from "./pages/admin/AdminConfig";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -39,7 +36,6 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/links" element={<LinksBio />} />
             <Route path="/shop" element={<Shop />} />
-            {/* Admin - nested routes inside protected layout */}
             <Route
               path="/admin"
               element={
@@ -50,11 +46,8 @@ const App = () => (
             >
               <Route index element={<AdminDashboard />} />
               <Route path="pipeline" element={<AdminPipeline />} />
-              <Route path="propostas" element={<AdminPropostas />} />
-              <Route path="vendas" element={<AdminVendas />} />
+              <Route path="campanhas" element={<AdminCampanhas />} />
               <Route path="projetos" element={<AdminProjetos />} />
-              <Route path="produtos" element={<AdminProdutos />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="tarefas" element={<AdminTarefas />} />
               <Route path="config" element={<AdminConfig />} />
             </Route>
