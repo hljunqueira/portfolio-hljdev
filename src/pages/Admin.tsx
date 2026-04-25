@@ -22,9 +22,8 @@ const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/admin" },
   { icon: Users, label: "Pipeline", to: "/admin/pipeline" },
   { icon: Map, label: "Campanhas Maps", to: "/admin/maps" },
-  { icon: Briefcase, label: "Projetos", to: "/admin/projetos" },
-  { icon: BarChart2, label: "Analytics", to: "/admin/analytics" },
   { icon: Calendar, label: "Agenda", to: "/admin/tarefas" },
+  { icon: Briefcase, label: "Projetos", to: "/admin/projetos" },
   { icon: Settings, label: "Config", to: "/admin/config" },
 ];
 

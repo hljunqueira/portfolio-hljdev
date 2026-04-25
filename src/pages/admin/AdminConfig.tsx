@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Helmet } from "react-helmet-async";
-import { Settings, Plus, Pencil, Trash2, Check, X, AlertTriangle } from "lucide-react";
+import { Settings, Plus, Pencil, Trash2, Check, X, AlertTriangle, BarChart2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
 const AdminConfig = () => {
@@ -9,6 +10,7 @@ const AdminConfig = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
+  const navigate = useNavigate();
 
   const load = async () => {
     const { data } = await supabase.from("templates_mensagem").select("*").order("created_at", { ascending: false });
@@ -50,6 +52,28 @@ const AdminConfig = () => {
           </h1>
           <p className="text-zinc-500 text-sm mt-1">Templates de WhatsApp e configurações globais</p>
         </header>
+
+        <section className="mb-10 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                <BarChart2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-white font-black uppercase text-sm tracking-tight mb-1">Métricas & Performance</h3>
+                <p className="text-zinc-500 text-xs leading-relaxed">
+                  Visualize a performance das suas campanhas, leads e conversão.
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => navigate("/admin/analytics")}
+              className="px-6 py-2.5 bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all shadow-lg"
+            >
+              Abrir Analytics
+            </button>
+          </div>
+        </section>
 
         <section>
           <div className="flex items-center justify-between mb-4">
