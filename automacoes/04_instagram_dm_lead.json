@@ -1,5 +1,5 @@
 {
-  "name": "INSTAGRAM_DM_QUALIFIER_AI",
+  "name": "INSTAGRAM_DM_QUALIFIER_AI_ELITE",
   "nodes": [
     {
       "parameters": {
@@ -36,6 +36,25 @@
     },
     {
       "parameters": {
+        "method": "GET",
+        "url": "https://supabase.hljdev.com.br/rest/v1/config_sistema?id=eq.1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-get-config",
+      "name": "Get Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://supabase.hljdev.com.br/rest/v1/leads",
         "sendHeaders": true,
@@ -49,8 +68,8 @@
         "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            { "name": "nome", "value": "=\"IG: \" + $json.senderId" },
-            { "name": "mensagem", "value": "=$json.text" },
+            { "name": "nome", "value": "=\"IG: \" + $(\"Parser\").first().json.senderId" },
+            { "name": "mensagem", "value": "=$(\"Parser\").first().json.text" },
             { "name": "origem", "value": "Instagram" }
           ]
         },
@@ -60,17 +79,17 @@
       "name": "Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [600, 200]
+      "position": [800, 200]
     },
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    model: \"llama-3.3-70b-versatile\",\n    messages: [\n      {\n        role: \"system\",\n        content: \"Você é o Assistente Virtual da HLJ DEV. Qualifique o lead perguntando: Nome, E-mail, WhatsApp, CEP e Interesse.\"\n      },\n      {\n        role: \"user\",\n        content: $input.first().json.text\n      }\n    ]\n  }\n}];"
+        "jsCode": "const config = $(\"Get Config\").first().json[0];\nconst userText = $(\"Parser\").first().json.text;\n\nreturn [{\n  json: {\n    model: config.ai_model || \"llama-3.3-70b-versatile\",\n    messages: [\n      {\n        role: \"system\",\n        content: config.ai_system_prompt || \"Você é o Assistente Virtual da HLJ DEV.\"\n      },\n      {\n        role: \"user\",\n        content: userText\n      }\n    ]\n  }\n}];"
       },
       "id": "node-prep-groq",
       "name": "Prep Groq",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [600, 400]
+      "position": [800, 400]
     },
     {
       "parameters": {
@@ -92,7 +111,7 @@
       "name": "Groq",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [800, 400]
+      "position": [1000, 400]
     },
     {
       "parameters": {
@@ -102,7 +121,7 @@
       "name": "Prep Reply",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 400]
+      "position": [1200, 400]
     },
     {
       "parameters": {
@@ -123,13 +142,14 @@
       "name": "Instagram Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 400]
+      "position": [1400, 400]
     }
   ],
   "connections": {
     "Webhook POST": { "main": [[{ "node": "Parser", "type": "main", "index": 0 }]] },
     "Parser": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
-    "Respond to Webhook": { "main": [[{ "node": "Supabase", "type": "main", "index": 0 }, { "node": "Prep Groq", "type": "main", "index": 0 }]] },
+    "Respond to Webhook": { "main": [[{ "node": "Get Config", "type": "main", "index": 0 }]] },
+    "Get Config": { "main": [[{ "node": "Supabase", "type": "main", "index": 0 }, { "node": "Prep Groq", "type": "main", "index": 0 }]] },
     "Prep Groq": { "main": [[{ "node": "Groq", "type": "main", "index": 0 }]] },
     "Groq": { "main": [[{ "node": "Prep Reply", "type": "main", "index": 0 }]] },
     "Prep Reply": { "main": [[{ "node": "Instagram Reply", "type": "main", "index": 0 }]] }
