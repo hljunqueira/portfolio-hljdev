@@ -139,11 +139,17 @@ const AdminConfig = () => {
       }
 
       const data = await res.json();
+      console.log("Evolution API Connect Response:", data);
+
       if (data.code) {
-        setQrCode(data.code);
+        // Garantir que o código tenha o prefixo de imagem base64
+        const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
+        setQrCode(qr);
         setWaStatus('DISCONNECTED');
+        toast({ title: "QR Code Gerado!", description: "Escaneie para conectar." });
       } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
         setWaStatus('CONNECTED');
+        setQrCode(null);
         toast({ title: "WhatsApp Conectado!" });
       } else {
         toast({ title: "Status: " + (data.status || "Desconectado") });
