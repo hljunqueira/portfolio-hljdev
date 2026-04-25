@@ -79,13 +79,13 @@ const AdminConfig = () => {
       setHealth(prev => ({ ...prev, supabase: 'error' }));
     }
 
-    // Evolution check (simple ping)
+    // Evolution check (simple ping to root)
     const startEv = performance.now();
     try {
-      const res = await fetch("https://evolution.hljdev.com.br/health", { method: 'GET' });
+      const res = await fetch(`${sysConfig.wa_api_url}/`, { method: 'GET' });
       const endEv = performance.now();
       setLatency(prev => ({ ...prev, evolution: Math.round(endEv - startEv) }));
-      setHealth(prev => ({ ...prev, evolution: res.ok ? 'online' : 'error' }));
+      setHealth(prev => ({ ...prev, evolution: res.status !== 404 ? 'online' : 'error' }));
     } catch {
       setHealth(prev => ({ ...prev, evolution: 'error' }));
     }
@@ -111,14 +111,14 @@ const AdminConfig = () => {
     if (!sysConfig) return;
     setWaStatus('LOADING');
     try {
-      // 1. Verificar se a instância existe
-      const stateRes = await fetch(`${sysConfig.wa_api_url}/instance/connectionState/${sysConfig.wa_instance_name}`, {
+      // 1. Tentar obter o QR Code diretamente
+      const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
         headers: { 'apikey': sysConfig.wa_api_key }
       });
       
-      if (stateRes.status === 404) {
-        // 2. Criar instância se não existir
-        await fetch(`${sysConfig.wa_api_url}/instance/create`, {
+      if (res.status === 404) {
+        // 2. Se a instância não existe, vamos criá-la
+        const createRes = await fetch(`${sysConfig.wa_api_url}/instance/create`, {
           method: 'POST',
           headers: { 
             'apikey': sysConfig.wa_api_key,
@@ -126,31 +126,32 @@ const AdminConfig = () => {
           },
           body: JSON.stringify({
             instanceName: sysConfig.wa_instance_name,
-            qrcode: true,
-            integration: "WHATSAPP-BAILEYS"
+            token: sysConfig.wa_api_key,
+            qrcode: true
           })
         });
+        
+        if (createRes.ok) {
+          // Tentar conectar novamente após criação
+          setTimeout(generateQrCode, 1500);
+          return;
+        }
       }
 
-      // 3. Solicitar Conexão / QR Code
-      const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
-        headers: { 'apikey': sysConfig.wa_api_key }
-      });
       const data = await res.json();
-      
       if (data.code) {
         setQrCode(data.code);
         setWaStatus('DISCONNECTED');
       } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
         setWaStatus('CONNECTED');
-        toast({ title: "WhatsApp já conectado!", description: "Sua instância está ativa." });
+        toast({ title: "WhatsApp Conectado!" });
       } else {
-        toast({ title: "Aguardando QR Code...", description: "Tente novamente em instantes." });
+        toast({ title: "Status: " + (data.status || "Desconectado") });
         setWaStatus('DISCONNECTED');
       }
     } catch (e) {
-      console.error("WA Integration error:", e);
-      toast({ title: "Erro na integração", description: "Verifique se a Evolution API está online.", variant: "destructive" });
+      console.error("WA Error:", e);
+      toast({ title: "Erro na Evolution API", description: "Verifique se a URL e API Key no painel estão corretas.", variant: "destructive" });
       setWaStatus('DISCONNECTED');
     }
   };
