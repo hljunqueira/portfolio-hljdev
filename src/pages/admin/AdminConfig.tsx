@@ -129,6 +129,17 @@ const AdminConfig = () => {
     cancelEdit(); loadData();
   };
 
+  const deleteTemplate = async (id: string) => {
+    if (!confirm("Excluir template?")) return;
+    await supabase.from("templates_mensagem").delete().eq("id", id);
+    loadData();
+  };
+
+  const addTemplate = async () => {
+    await supabase.from("templates_mensagem").insert({ nome: "Novo Template", texto: "", tipo: "geral" });
+    loadData();
+  };
+
   if (loading) {
     return (
       <div className="p-10 text-primary flex items-center gap-3 animate-pulse">
