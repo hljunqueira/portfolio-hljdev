@@ -115,15 +115,18 @@ const AdminConfig = () => {
       const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       try {
-        const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
+        const url = `${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`;
+        console.log("Calling Evolution API:", url);
+        const res = await fetch(url, {
           headers: { 'apikey': sysConfig.wa_api_key },
           signal: controller.signal
         });
         clearTimeout(timeoutId);
         
         if (res.status === 404) {
-          console.log("Instância não encontrada, tentando criar...");
-          const createRes = await fetch(`${sysConfig.wa_api_url}/instance/create`, {
+          console.log("Instância não encontrada (404), tentando criar...");
+          const createUrl = `${sysConfig.wa_api_url}/instance/create`;
+          const createRes = await fetch(createUrl, {
             method: 'POST',
             headers: { 
               'apikey': sysConfig.wa_api_key,
@@ -143,7 +146,7 @@ const AdminConfig = () => {
         }
 
         const data = await res.json();
-        console.log("Evolution API Data Recieved:", JSON.stringify(data, null, 2));
+        console.log("Evolution API Data Received:", JSON.stringify(data, null, 2));
 
         if (data.code) {
           const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
