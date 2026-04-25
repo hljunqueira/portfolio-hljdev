@@ -19,7 +19,7 @@ const AdminConfig = () => {
   const [editData, setEditData] = useState<any>({});
   
   // WhatsApp States
-  const [waStatus, setWaStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'LOADING'>('LOADING');
+  const [waStatus, setWaStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'LOADING' | 'CONNECTING'>('LOADING');
   const [qrCode, setQrCode] = useState<string | null>(null);
   
   // Health & Performance States
@@ -103,9 +103,17 @@ const AdminConfig = () => {
       const data = await res.json();
       console.log("Check Status Response:", data);
       
-      // Evolution v2 common fields: state, connectionStatus, or instance.state
       const state = data.instance?.state || data.instance?.connectionStatus || data.status || data.state || data.instance?.connection?.state;
-      setWaStatus(state === 'open' || state === 'CONNECTED' || state === 'connected' ? 'CONNECTED' : 'DISCONNECTED');
+      
+      if (state === 'open' || state === 'CONNECTED' || state === 'connected') {
+        setWaStatus('CONNECTED');
+      } else if (state === 'connecting' || state === 'CONNECTING') {
+        setWaStatus('CONNECTING');
+        // Tentar novamente em 5 segundos se estiver conectando
+        setTimeout(() => checkWaStatus(config), 5000);
+      } else {
+        setWaStatus('DISCONNECTED');
+      }
     } catch (e) {
       console.error("Check Status Error:", e);
       setWaStatus('DISCONNECTED');
@@ -246,7 +254,11 @@ const AdminConfig = () => {
           <div className="flex gap-2">
             <HealthIndicator label="DB" status={health.supabase} latency={latency.supabase} />
             <HealthIndicator label="N8N" status={health.n8n} latency={latency.n8n} />
-            <HealthIndicator label="WA" status={health.evolution} latency={latency.evolution} />
+            <HealthIndicator 
+              label="WA" 
+              status={waStatus === 'CONNECTED' ? 'online' : waStatus === 'CONNECTING' ? 'connecting' : 'error'} 
+              latency={latency.evolution} 
+            />
           </div>
         </header>
 
@@ -290,20 +302,34 @@ const AdminConfig = () => {
             className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex items-center justify-between group"
           >
             <div className="flex items-center gap-5">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform ${waStatus === 'CONNECTED' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'}`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform ${
+                waStatus === 'CONNECTED' ? 'bg-green-500/10 text-green-500' : 
+                waStatus === 'CONNECTING' ? 'bg-amber-500/10 text-amber-500 animate-pulse' :
+                'bg-orange-500/10 text-orange-500'
+              }`}>
                 {waStatus === 'CONNECTED' ? <Wifi size={28} /> : <WifiOff size={28} />}
               </div>
               <div>
                 <h3 className="text-white font-black uppercase text-sm tracking-tight">WhatsApp Elite</h3>
-                <p className="text-zinc-500 text-xs">{waStatus === 'CONNECTED' ? 'Conectado e operacional' : 'Aguardando conexão'}</p>
+                <p className="text-zinc-500 text-xs">
+                  {waStatus === 'CONNECTED' ? 'Conectado e operacional' : 
+                   waStatus === 'CONNECTING' ? 'Estabelecendo conexão...' :
+                   'Aguardando conexão'}
+                </p>
               </div>
             </div>
             <button 
               onClick={generateQrCode}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${waStatus === 'CONNECTED' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-primary text-black hover:scale-105'}`}
-              disabled={waStatus === 'CONNECTED' || waStatus === 'LOADING'}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                waStatus === 'CONNECTED' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 
+                waStatus === 'CONNECTING' ? 'bg-amber-500/20 text-amber-500' :
+                'bg-primary text-black hover:scale-105'
+              }`}
+              disabled={waStatus === 'CONNECTED' || waStatus === 'LOADING' || waStatus === 'CONNECTING'}
             >
-              {waStatus === 'CONNECTED' ? 'Ativo' : waStatus === 'LOADING' ? 'Conectando...' : 'Conectar'}
+              {waStatus === 'CONNECTED' ? 'Ativo' : 
+               waStatus === 'CONNECTING' ? 'Sincronizando' :
+               waStatus === 'LOADING' ? 'Conectando...' : 'Conectar'}
             </button>
           </motion.div>
         </div>
@@ -600,6 +626,7 @@ const HealthIndicator = ({ label, status, latency }: { label: string, status: st
   <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900/60 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700">
     <div className={`w-2 h-2 rounded-full ${
       status === 'online' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 
+      status === 'connecting' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)] animate-pulse' :
       status === 'error' ? 'bg-red-500' : 'bg-zinc-700 animate-pulse'
     }`} />
     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
