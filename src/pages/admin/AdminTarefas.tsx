@@ -1,152 +1,287 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
-import { Calendar as CalendarIcon, Check, Plus, Clock, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Plus, Search, CheckCircle2, Circle, 
+  Trash2, MessageSquare, User, Calendar as CalendarIcon,
+  ChevronLeft, LayoutGrid, List, SquarePen, Share
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Calendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const AdminTarefas = () => {
   const [tarefas, setTarefas] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
+  
+  const selectedTask = tarefas.find(t => t.id === selectedTaskId);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data: tData } = await supabase
       .from("tarefas")
       .select("*, leads(nome)")
-      .order("data_vencimento", { ascending: true });
-    setTarefas(data ?? []);
+      .order("created_at", { ascending: false });
+    
+    const { data: lData } = await supabase.from("leads").select("id, nome").order("nome");
+    
+    setTarefas(tData ?? []);
+    setLeads(lData ?? []);
+    
+    if (tData && tData.length > 0 && !selectedTaskId) {
+      setSelectedTaskId(tData[0].id);
+    }
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const toggle = async (t: any) => {
-    await supabase.from("tarefas").update({ concluida: !t.concluida }).eq("id", t.id);
-    toast({ title: t.concluida ? "Tarefa reaberta" : "Tarefa concluída!" });
-    load();
+  const createNewTask = async () => {
+    const newTask = {
+      titulo: "Nova Nota",
+      descricao: "",
+      data_vencimento: new Date().toISOString(),
+      concluida: false
+    };
+
+    const { data, error } = await supabase.from("tarefas").insert(newTask).select().single();
+    
+    if (error) {
+      toast({ title: "Erro ao criar nota", variant: "destructive" });
+    } else {
+      setTarefas([data, ...tarefas]);
+      setSelectedTaskId(data.id);
+    }
   };
 
-  const filteredTarefas = date 
-    ? tarefas.filter(t => t.data_vencimento && new Date(t.data_vencimento).toDateString() === date.toDateString())
-    : tarefas;
+  const updateTask = async (id: string, updates: any) => {
+    setSaving(true);
+    const { error } = await supabase.from("tarefas").update(updates).eq("id", id);
+    if (!error) {
+      setTarefas(tarefas.map(t => t.id === id ? { ...t, ...updates } : t));
+    }
+    setSaving(false);
+  };
 
-  const pendentes = filteredTarefas.filter((t) => !t.concluida);
-  const concluidas = filteredTarefas.filter((t) => t.concluida);
+  const deleteTask = async (id: string) => {
+    if (!confirm("Excluir esta nota permanentemente?")) return;
+    const { error } = await supabase.from("tarefas").delete().eq("id", id);
+    if (!error) {
+      const nextList = tarefas.filter(t => t.id !== id);
+      setTarefas(nextList);
+      setSelectedTaskId(nextList.length > 0 ? nextList[0].id : null);
+      toast({ title: "Nota excluída" });
+    }
+  };
+
+  const filteredTarefas = tarefas.filter(t => 
+    t.titulo.toLowerCase().includes(search.toLowerCase()) || 
+    t.descricao?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <>
-      <Helmet><title>HLJ DEV | Agenda</title></Helmet>
-      <div className="p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary/60 text-xs mb-1 uppercase tracking-[0.3em] font-black">
-              <CalendarIcon className="h-3 w-3" /> Agenda de Follow-ups
+      <Helmet><title>Notas | HLJ DEV</title></Helmet>
+      
+      <div className="flex h-screen bg-[#1c1c1e] text-[#ffffff] font-sans overflow-hidden">
+        
+        {/* Sidebar (Note List) */}
+        <aside className="w-[320px] border-r border-[#38383a] flex flex-col bg-[#1c1c1e]">
+          {/* Sidebar Header */}
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[#a2a2a7] font-semibold text-xs uppercase tracking-widest">HLJ Notas</span>
+              <button onClick={createNewTask} className="text-primary hover:opacity-80 transition-opacity">
+                <SquarePen size={20} />
+              </button>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">
-              Follow-up <span className="text-primary">Geral</span>
-            </h1>
-            <p className="text-zinc-500 text-sm font-medium">
-              {date ? format(date, "PPPP", { locale: ptBR }) : "Todas as tarefas"}
-            </p>
-          </div>
-          <button className="bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase text-[10px] tracking-widest px-6 py-3 rounded-xl border border-zinc-800 transition-all flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Nova Tarefa
-          </button>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Calendar Sidebar */}
-          <div className="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 p-4 rounded-3xl sticky top-8">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              locale={ptBR}
-              className="rounded-2xl border-none"
-              classNames={{
-                head_cell: "text-zinc-500 rounded-md w-9 font-black text-[10px] uppercase",
-                day_selected: "bg-primary text-black font-black hover:bg-primary hover:text-black focus:bg-primary focus:text-black",
-                day_today: "bg-zinc-800 text-white font-bold",
-              }}
-            />
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a2a2a7]" size={14} />
+              <input 
+                type="text"
+                placeholder="Buscar"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-[#2c2c2e] rounded-lg py-1.5 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-[#ffffff] placeholder-[#a2a2a7]"
+              />
+            </div>
           </div>
 
-          {/* Tasks List */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                {pendentes.length} Pendentes
-              </div>
-              <div className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                {concluidas.length} Concluídas
-              </div>
-            </div>
-
+          {/* List Area */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-10">
             {loading ? (
-              <div className="p-12 text-center text-primary animate-pulse font-black uppercase tracking-widest text-xs">
-                Sincronizando com Supabase...
-              </div>
-            ) : filteredTarefas.length === 0 ? (
-              <div className="p-20 text-center bg-zinc-950/50 border border-dashed border-zinc-900 rounded-3xl">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-zinc-800" />
-                <p className="text-zinc-600 font-bold uppercase tracking-widest text-xs">Nenhuma tarefa para este dia</p>
-                <button onClick={() => setDate(undefined)} className="mt-4 text-primary text-[10px] font-black uppercase tracking-widest hover:underline">Ver todas as tarefas</button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendentes.map((t, i) => (
-                  <motion.div
-                    key={t.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="group bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl flex items-center justify-between gap-4 hover:border-primary/20 transition-all shadow-lg shadow-black/20"
-                  >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <button 
-                        onClick={() => toggle(t)} 
-                        className="w-6 h-6 rounded-lg border-2 border-zinc-700 flex items-center justify-center shrink-0 hover:border-primary/50 transition-all group-hover:scale-110"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-black text-white uppercase tracking-tight truncate group-hover:text-primary transition-colors">{t.titulo}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          {t.leads?.nome && (
-                            <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
-                              <User className="h-2.5 w-2.5" /> {t.leads.nome}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-                            <Clock className="h-2.5 w-2.5" /> {format(new Date(t.data_vencimento), "HH:mm")}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {concluidas.length > 0 && (
-                  <div className="pt-8 space-y-3">
-                    <h4 className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em] px-2 mb-4">Concluídas</h4>
-                    {concluidas.map((t) => (
-                      <div key={t.id} className="flex items-center gap-4 p-4 rounded-2xl bg-zinc-950/50 border border-zinc-900 opacity-40 hover:opacity-100 transition-all group cursor-pointer" onClick={() => toggle(t)}>
-                        <div className="w-5 h-5 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                          <Check className="h-3 w-3 text-primary" />
-                        </div>
-                        <p className="text-xs text-zinc-500 font-bold line-through uppercase tracking-tight">{t.titulo}</p>
-                      </div>
-                    ))}
+              <div className="p-10 text-center animate-pulse text-[#a2a2a7] text-xs font-bold uppercase tracking-widest">Sincronizando...</div>
+            ) : filteredTarefas.map((t) => (
+              <div 
+                key={t.id}
+                onClick={() => setSelectedTaskId(t.id)}
+                className={`p-4 rounded-xl cursor-pointer mb-1 transition-all relative overflow-hidden group ${
+                  selectedTaskId === t.id 
+                    ? "bg-[#e5a823] text-[#000000]" 
+                    : "hover:bg-[#2c2c2e] text-[#ffffff]"
+                }`}
+              >
+                <h3 className={`text-sm font-bold truncate mb-0.5 ${selectedTaskId === t.id ? "text-black" : "text-white"}`}>
+                  {t.titulo || "Nota sem título"}
+                </h3>
+                <div className="flex items-center gap-2 text-[11px] opacity-60">
+                  <span className="font-semibold">
+                    {format(new Date(t.created_at), "HH:mm")}
+                  </span>
+                  <span className="truncate">
+                    {t.descricao ? t.descricao.substring(0, 40) : "Sem conteúdo adicional"}
+                  </span>
+                </div>
+                {t.concluida && (
+                  <div className={`absolute right-3 top-1/2 -translate-y-1/2 ${selectedTaskId === t.id ? "text-black" : "text-primary"}`}>
+                    <CheckCircle2 size={14} />
                   </div>
                 )}
               </div>
-            )}
+            ))}
           </div>
-        </div>
+        </aside>
+
+        {/* Main Content (Editor) */}
+        <main className="flex-1 flex flex-col bg-[#1c1c1e] relative">
+          <AnimatePresence mode="wait">
+            {selectedTask ? (
+              <motion.div 
+                key={selectedTask.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="flex flex-col h-full"
+              >
+                {/* Editor Header / Toolbar */}
+                <header className="h-14 border-b border-[#38383a] flex items-center justify-between px-6 shrink-0">
+                  <div className="flex items-center gap-4 text-[#a2a2a7]">
+                    <button onClick={() => updateTask(selectedTask.id, { concluida: !selectedTask.concluida })} className="hover:text-primary transition-colors">
+                      {selectedTask.concluida ? <CheckCircle2 className="text-primary" size={20} /> : <Circle size={20} />}
+                    </button>
+                    <button onClick={() => deleteTask(selectedTask.id)} className="hover:text-red-400 transition-colors">
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-[#2c2c2e] rounded-lg">
+                      <LayoutGrid size={16} className="text-[#a2a2a7]" />
+                      <Share size={16} className="text-[#a2a2a7]" />
+                    </div>
+                    {saving && <span className="text-[10px] uppercase font-bold text-primary animate-pulse tracking-widest">Salvando...</span>}
+                  </div>
+                </header>
+
+                {/* Editor Area */}
+                <div className="flex-1 overflow-y-auto p-12 max-w-4xl mx-auto w-full">
+                  <div className="text-center mb-8">
+                    <span className="text-[11px] font-bold text-[#a2a2a7] uppercase tracking-[0.2em]">
+                      {format(new Date(selectedTask.data_vencimento), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+
+                  <input 
+                    type="text"
+                    value={selectedTask.titulo}
+                    onChange={(e) => updateTask(selectedTask.id, { titulo: e.target.value })}
+                    className="w-full bg-transparent text-3xl font-black text-white focus:outline-none mb-6 placeholder-[#38383a]"
+                    placeholder="Título da Nota"
+                  />
+
+                  <textarea 
+                    value={selectedTask.descricao || ""}
+                    onChange={(e) => updateTask(selectedTask.id, { descricao: e.target.value })}
+                    className="w-full bg-transparent text-lg text-[#d1d1d6] leading-relaxed focus:outline-none resize-none h-[calc(100vh-350px)] placeholder-[#38383a]"
+                    placeholder="Comece a escrever..."
+                  />
+                  
+                  {/* Footer Settings */}
+                  <div className="mt-12 pt-12 border-t border-[#38383a] grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#a2a2a7] flex items-center gap-2">
+                        <User size={12} /> Lead Vinculado
+                      </label>
+                      <select 
+                        value={selectedTask.lead_id || ""}
+                        onChange={(e) => updateTask(selectedTask.id, { lead_id: e.target.value || null })}
+                        className="w-full bg-[#2c2c2e] border border-[#38383a] rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-primary/50"
+                      >
+                        <option value="">Nenhum lead vinculado</option>
+                        {leads.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[#a2a2a7] flex items-center gap-2">
+                        <CalendarIcon size={12} /> Data de Vencimento
+                      </label>
+                      <input 
+                        type="datetime-local"
+                        value={selectedTask.data_vencimento ? selectedTask.data_vencimento.substring(0, 16) : ""}
+                        onChange={(e) => updateTask(selectedTask.id, { data_vencimento: new Date(e.target.value).toISOString() })}
+                        className="w-full bg-[#2c2c2e] border border-[#38383a] rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-4 p-4 bg-[#2c2c2e] rounded-2xl md:col-span-2">
+                      <div className={`p-3 rounded-xl ${selectedTask.alerta_whatsapp ? 'bg-primary/20 text-primary' : 'bg-[#38383a] text-[#a2a2a7]'}`}>
+                        <MessageSquare size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-xs font-bold uppercase tracking-tight">Alerta no WhatsApp</h4>
+                        <p className="text-[10px] text-[#a2a2a7]">Notificar via automação quando vencer.</p>
+                      </div>
+                      <button 
+                        onClick={() => updateTask(selectedTask.id, { alerta_whatsapp: !selectedTask.alerta_whatsapp })}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${selectedTask.alerta_whatsapp ? 'bg-primary' : 'bg-[#38383a]'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${selectedTask.alerta_whatsapp ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-[#38383a]">
+                <SquarePen size={80} strokeWidth={1} />
+                <p className="mt-4 font-bold uppercase tracking-widest text-xs">Selecione ou crie uma nota</p>
+                <button 
+                  onClick={createNewTask}
+                  className="mt-6 px-6 py-2 bg-[#2c2c2e] text-[#a2a2a7] rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all"
+                >
+                  Nova Nota
+                </button>
+              </div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #38383a;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #48484a;
+        }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+        }
+      `}</style>
     </>
   );
 };
