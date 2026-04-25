@@ -139,7 +139,7 @@ const AdminConfig = () => {
       }
 
       const data = await res.json();
-      console.log("Evolution API Connect Response:", data);
+      console.log("Evolution API Connect Response:", JSON.stringify(data, null, 2));
 
       if (data.code) {
         // Garantir que o código tenha o prefixo de imagem base64
