@@ -75,7 +75,10 @@ const AdminTarefas = () => {
   const deleteTask = async (id: string) => {
     if (!confirm("Excluir esta nota permanentemente?")) return;
     const { error } = await supabase.from("tarefas").delete().eq("id", id);
-    if (!error) {
+    if (error) {
+      console.error("Delete error:", error);
+      toast({ title: "Erro ao excluir nota", description: error.message, variant: "destructive" });
+    } else {
       const nextList = tarefas.filter(t => t.id !== id);
       setTarefas(nextList);
       setSelectedTaskId(nextList.length > 0 ? nextList[0].id : null);
