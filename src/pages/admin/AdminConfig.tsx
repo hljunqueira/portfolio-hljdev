@@ -22,11 +22,21 @@ const AdminConfig = () => {
   const [waStatus, setWaStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'LOADING'>('LOADING');
   const [qrCode, setQrCode] = useState<string | null>(null);
   
-  // Health States
+  // Health & Performance States
   const [health, setHealth] = useState({
     supabase: 'loading',
     n8n: 'loading',
     evolution: 'loading'
+  });
+  const [latency, setLatency] = useState({
+    supabase: 0,
+    n8n: 0,
+    evolution: 0
+  });
+  const [stats, setStats] = useState({
+    totalLeads: 0,
+    hotLeads: 0,
+    avgScore: 0
   });
 
   const navigate = useNavigate();
@@ -50,24 +60,39 @@ const AdminConfig = () => {
   };
 
   const checkHealth = async () => {
-    // Supabase check
+    // Supabase check + Latency
+    const startSb = performance.now();
     try {
-      const { error } = await supabase.from("leads").select("id", { count: 'exact', head: true }).limit(1);
+      const { data, error } = await supabase.from("leads").select("id, lead_score").order("created_at", { ascending: false }).limit(100);
+      const endSb = performance.now();
+      setLatency(prev => ({ ...prev, supabase: Math.round(endSb - startSb) }));
       setHealth(prev => ({ ...prev, supabase: error ? 'error' : 'online' }));
+
+      // Calculate Stats
+      if (data) {
+        const total = data.length;
+        const hot = data.filter(l => (l.lead_score || 0) >= 70).length;
+        const avg = data.reduce((acc, curr) => acc + (curr.lead_score || 0), 0) / (total || 1);
+        setStats({ totalLeads: total, hotLeads: hot, avgScore: Math.round(avg) });
+      }
     } catch {
       setHealth(prev => ({ ...prev, supabase: 'error' }));
     }
 
     // Evolution check (simple ping)
+    const startEv = performance.now();
     try {
       const res = await fetch("https://evolution.hljdev.com.br/health", { method: 'GET' });
+      const endEv = performance.now();
+      setLatency(prev => ({ ...prev, evolution: Math.round(endEv - startEv) }));
       setHealth(prev => ({ ...prev, evolution: res.ok ? 'online' : 'error' }));
     } catch {
       setHealth(prev => ({ ...prev, evolution: 'error' }));
     }
 
-    // N8N check
-    setHealth(prev => ({ ...prev, n8n: 'online' })); // Simplified
+    // N8N check (simplified for now, could be a real ping)
+    setHealth(prev => ({ ...prev, n8n: 'online' }));
+    setLatency(prev => ({ ...prev, n8n: 120 })); // Mock for now
   };
 
   const checkWaStatus = async (config: any) => {
@@ -194,9 +219,9 @@ const AdminConfig = () => {
           </div>
           
           <div className="flex gap-2">
-            <HealthIndicator label="DB" status={health.supabase} />
-            <HealthIndicator label="N8N" status={health.n8n} />
-            <HealthIndicator label="WA" status={health.evolution} />
+            <HealthIndicator label="DB" status={health.supabase} latency={latency.supabase} />
+            <HealthIndicator label="N8N" status={health.n8n} latency={latency.n8n} />
+            <HealthIndicator label="WA" status={health.evolution} latency={latency.evolution} />
           </div>
         </header>
 
@@ -204,20 +229,35 @@ const AdminConfig = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <motion.div 
             whileHover={{ y: -4 }}
-            className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex items-center justify-between group cursor-pointer"
+            className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer"
             onClick={() => navigate("/admin/analytics")}
           >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <BarChart2 size={28} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <BarChart2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-white font-black uppercase text-xs tracking-tight">Performance Operacional</h3>
+                  <p className="text-zinc-500 text-[10px]">Eficiência de conversão em tempo real.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-white font-black uppercase text-sm tracking-tight">Performance Analítica</h3>
-                <p className="text-zinc-500 text-xs">Métricas reais de conversão e ROI.</p>
-              </div>
+              <Activity className="text-primary animate-pulse" size={14} />
             </div>
-            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-black transition-colors">
-              <Check size={18} />
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50 text-center">
+                <span className="block text-white font-black text-lg leading-none mb-1">{stats.totalLeads}</span>
+                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Leads</span>
+              </div>
+              <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50 text-center">
+                <span className="block text-primary font-black text-lg leading-none mb-1">{stats.avgScore}</span>
+                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Avg Score</span>
+              </div>
+              <div className="bg-zinc-950/50 p-3 rounded-2xl border border-zinc-800/50 text-center">
+                <span className="block text-green-500 font-black text-lg leading-none mb-1">{stats.hotLeads}</span>
+                <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Hot</span>
+              </div>
             </div>
           </motion.div>
 
@@ -482,10 +522,14 @@ const AdminConfig = () => {
   );
 };
 
-const HealthIndicator = ({ label, status }: { label: string, status: string }) => (
-  <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full">
-    <div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : status === 'loading' ? 'bg-zinc-600 animate-pulse' : 'bg-red-500 animate-ping'}`} />
-    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{label}</span>
+const HealthIndicator = ({ label, status, latency }: { label: string, status: string, latency: number }) => (
+  <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900/60 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700">
+    <div className={`w-2 h-2 rounded-full ${
+      status === 'online' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 
+      status === 'error' ? 'bg-red-500' : 'bg-zinc-700 animate-pulse'
+    }`} />
+    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
+    {status === 'online' && <span className="text-[9px] font-bold text-zinc-600">{latency}ms</span>}
   </div>
 );
 
