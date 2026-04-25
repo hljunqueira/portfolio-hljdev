@@ -230,8 +230,7 @@ const AdminConfig = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <motion.div 
             whileHover={{ y: -4 }}
-            className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-4 group cursor-pointer"
-            onClick={() => navigate("/admin/analytics")}
+            className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-4 group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

@@ -16,7 +16,6 @@ import AdminMaps from "./pages/admin/AdminMaps";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPipeline from "./pages/admin/AdminPipeline";
 import AdminProjetos from "./pages/admin/AdminProjetos";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminTarefas from "./pages/admin/AdminTarefas";
 import AdminConfig from "./pages/admin/AdminConfig";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -43,7 +42,6 @@ const App = () => (
                 <Route path="pipeline" element={<AdminPipeline />} />
                 <Route path="maps" element={<AdminMaps />} />
                 <Route path="projetos" element={<AdminProjetos />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="tarefas" element={<AdminTarefas />} />
                 <Route path="config" element={<AdminConfig />} />
               </Route>
