@@ -86,16 +86,46 @@ const AdminConfig = () => {
     if (!sysConfig) return;
     setWaStatus('LOADING');
     try {
+      // 1. Verificar se a instância existe
+      const stateRes = await fetch(`${sysConfig.wa_api_url}/instance/connectionState/${sysConfig.wa_instance_name}`, {
+        headers: { 'apikey': sysConfig.wa_api_key }
+      });
+      
+      if (stateRes.status === 404) {
+        // 2. Criar instância se não existir
+        await fetch(`${sysConfig.wa_api_url}/instance/create`, {
+          method: 'POST',
+          headers: { 
+            'apikey': sysConfig.wa_api_key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            instanceName: sysConfig.wa_instance_name,
+            qrcode: true,
+            integration: "WHATSAPP-BAILEYS"
+          })
+        });
+      }
+
+      // 3. Solicitar Conexão / QR Code
       const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
         headers: { 'apikey': sysConfig.wa_api_key }
       });
       const data = await res.json();
+      
       if (data.code) {
         setQrCode(data.code);
         setWaStatus('DISCONNECTED');
+      } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
+        setWaStatus('CONNECTED');
+        toast({ title: "WhatsApp já conectado!", description: "Sua instância está ativa." });
+      } else {
+        toast({ title: "Aguardando QR Code...", description: "Tente novamente em instantes." });
+        setWaStatus('DISCONNECTED');
       }
     } catch (e) {
-      toast({ title: "Erro ao gerar QR Code", variant: "destructive" });
+      console.error("WA Integration error:", e);
+      toast({ title: "Erro na integração", description: "Verifique se a Evolution API está online.", variant: "destructive" });
       setWaStatus('DISCONNECTED');
     }
   };
