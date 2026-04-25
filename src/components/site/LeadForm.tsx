@@ -4,9 +4,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Bot, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-export type Lead = { id: string; nome: string; email: string; whatsapp: string; endereco: string; interesse: string; mensagem: string; created_at: string };
+export type Lead = { id: string; nome: string; email: string; whatsapp: string; endereco: string; interesse: string; mensagem: string; created_at: string; status: string; origem: string };
 
 export function LeadForm() {
   const [nome, setNome] = useState("");
@@ -23,27 +24,47 @@ export function LeadForm() {
 
     try {
       const id = crypto.randomUUID();
-      const lead: Lead & { endereco: string } = { id, nome, email, whatsapp, endereco, interesse, mensagem, created_at: new Date().toISOString() };
+      const leadData = { 
+        id, 
+        nome, 
+        email, 
+        whatsapp, 
+        endereco, 
+        interesse, 
+        mensagem, 
+        created_at: new Date().toISOString(),
+        status: "novo",
+        origem: "Site HLJ DEV"
+      };
       
-      // Salva no banco local temporário para a área administrativa do site
-      const current = JSON.parse(localStorage.getItem("leads") || "[]");
-      localStorage.setItem("leads", JSON.stringify([lead, ...current]));
+      // 1. Salva no Supabase (Instantâneo para a Pipeline)
+      const { error: sbError } = await supabase.from("leads").insert(leadData);
+      
+      if (sbError) {
+        console.error("❌ Supabase insert failed:", sbError);
+        throw new Error("Erro ao registrar lead no sistema principal.");
+      }
 
-      // ✅ Webhook ATIVADO - Envia lead para N8N
+      // 2. Salva no banco local temporário
+      const current = JSON.parse(localStorage.getItem("leads") || "[]");
+      localStorage.setItem("leads", JSON.stringify([leadData, ...current]));
+
+      // 3. Webhook ATIVADO - Envia lead para N8N (Automações)
       const WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
       
-      const webhookResponse = await fetch(WEBHOOK_URL, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify(lead) 
-      });
+      if (WEBHOOK_URL) {
+        const webhookResponse = await fetch(WEBHOOK_URL, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify(leadData) 
+        });
 
-      if (!webhookResponse.ok) {
-        console.error("❌ Webhook failed:", webhookResponse.status);
-        throw new Error("Falha ao enviar lead para servidor");
+        if (!webhookResponse.ok) {
+          console.error("❌ Webhook failed:", webhookResponse.status);
+        }
       }
       
-      console.log("✅ Lead enviado para N8N com sucesso!");
+      console.log("✅ Lead processado com sucesso!");
 
       toast({ 
         title: "Escala Iniciada!", 
@@ -51,8 +72,8 @@ export function LeadForm() {
       });
       
       setNome(""); setEmail(""); setWhatsapp(""); setEndereco(""); setInteresse(""); setMensagem("");
-    } catch (error) {
-      toast({ title: "Ops!", description: "Houve um problema ao enviar o contato.", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Ops!", description: error.message || "Houve um problema ao enviar o contato.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
