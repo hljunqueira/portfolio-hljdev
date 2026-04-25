@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const AdminConfig = () => {
   const [templates, setTemplates] = useState<any[]>([]);
@@ -283,20 +283,70 @@ const AdminConfig = () => {
             <button 
               onClick={generateQrCode}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${waStatus === 'CONNECTED' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-primary text-black hover:scale-105'}`}
-              disabled={waStatus === 'CONNECTED'}
+              disabled={waStatus === 'CONNECTED' || waStatus === 'LOADING'}
             >
-              {waStatus === 'CONNECTED' ? 'Ativo' : 'Conectar'}
+              {waStatus === 'CONNECTED' ? 'Ativo' : waStatus === 'LOADING' ? 'Conectando...' : 'Conectar'}
             </button>
           </motion.div>
         </div>
 
-        {qrCode && (
-          <div className="mb-12 bg-white p-8 rounded-3xl flex flex-col items-center justify-center gap-4 max-w-sm mx-auto shadow-2xl shadow-primary/20 border-4 border-primary">
-            <h3 className="text-black font-black uppercase text-sm tracking-widest">Escaneie o QR Code</h3>
-            <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64" />
-            <button onClick={() => setQrCode(null)} className="text-zinc-400 text-[10px] uppercase font-bold hover:text-black">Fechar</button>
-          </div>
-        )}
+        {/* WhatsApp Connection Modal (Elite Overlay) */}
+        <AnimatePresence>
+          {(waStatus === 'LOADING' || qrCode) && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-zinc-950 border border-zinc-800 p-10 rounded-[40px] max-w-sm w-full flex flex-col items-center gap-8 shadow-2xl shadow-primary/10 relative overflow-hidden"
+              >
+                {/* Background Decor */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+                
+                {waStatus === 'LOADING' && !qrCode ? (
+                  <div className="py-10 flex flex-col items-center gap-6">
+                    <div className="relative">
+                      <RefreshCcw className="w-16 h-16 text-primary animate-spin" strokeWidth={1} />
+                      <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-white font-black uppercase text-sm tracking-widest mb-2">Protocolo de Conexão</h3>
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">Sincronizando Evolution API...</p>
+                    </div>
+                  </div>
+                ) : qrCode ? (
+                  <>
+                    <div className="text-center">
+                      <h3 className="text-white font-black uppercase text-sm tracking-widest mb-1">Elite QR Code</h3>
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Escaneie para autenticar</p>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-[32px] shadow-inner shadow-black/20 border-4 border-primary/20">
+                      <img src={qrCode} alt="WhatsApp QR Code" className="w-56 h-56" />
+                    </div>
+
+                    <div className="flex flex-col gap-3 w-full">
+                      <div className="flex items-center gap-2 justify-center py-2 px-4 bg-primary/5 rounded-full border border-primary/10">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                        <span className="text-[9px] font-black text-primary uppercase tracking-widest">Aguardando Pareamento</span>
+                      </div>
+                      <button 
+                        onClick={() => { setQrCode(null); setWaStatus('DISCONNECTED'); }} 
+                        className="text-zinc-600 text-[10px] uppercase font-black hover:text-white transition-colors"
+                      >
+                        Cancelar Operação
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* AI Settings */}
