@@ -1,0 +1,204 @@
+{
+  "name": "HLJ Relatório Semanal",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * 5"
+            }
+          ]
+        }
+      },
+      "id": "node-cron-semanal",
+      "name": "Cron — Toda Sexta 18h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/leads?created_at=gte.{{ $now.minus(7, 'day').toISO() }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-buscar-leads-semana",
+      "name": "Supabase — Buscar Leads Semana",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/vendas?created_at=gte.{{ $now.minus(7, 'day').toISO() }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-buscar-vendas-semana",
+      "name": "Supabase — Buscar Vendas Semana",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $('Supabase — Buscar Leads Semana').first().json;\nconst vendas = $('Supabase — Buscar Vendas Semana').first().json;\n\nconst totalLeads = leads.length || 0;\nconst totalVendas = vendas.length || 0;\nconst faturamento = vendas.reduce((sum, v) => sum + (parseFloat(v.valor) || 0), 0);\nconst conversao = totalLeads > 0 ? ((totalVendas / totalLeads) * 100).toFixed(1) : 0;\n\nconst mensagem = `📊 RELATÓRIO SEMANAL - HLJ DEV\n━━━━━━━━━━━━━━━━━━━━━━━\n📅 Semana: {{ $now.toFormat('dd/MM/yyyy') }}\n\n👥 Leads: ${totalLeads}\n💰 Vendas: ${totalVendas}\n💵 Faturamento: R$ ${faturamento.toFixed(2)}\n📈 Conversão: ${conversao}%\n\n━━━━━━━━━━━━━━━━━━━━━━━\n✅ Continue assim!`;\n\nreturn [{ json: { mensagem, totalLeads, totalVendas, faturamento, conversao } }];"
+      },
+      "id": "node-gerar-relatorio",
+      "name": "Gerar Relatório",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $env.SEU_WHATSAPP }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagem }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-enviar-whatsapp",
+      "name": "WhatsApp — Enviar Relatório",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron — Toda Sexta 18h": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Buscar Leads Semana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase — Buscar Leads Semana": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Buscar Vendas Semana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase — Buscar Vendas Semana": {
+      "main": [
+        [
+          {
+            "node": "Gerar Relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Relatório": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp — Enviar Relatório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "Relatórios"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "06-hlj-relatorio-semanal"
+}

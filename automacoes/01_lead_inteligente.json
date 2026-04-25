@@ -1,5 +1,5 @@
 {
-  "name": "HLJ Lead Inteligente",
+  "name": "HLJ Lead Inteligente v2",
   "nodes": [
     {
       "parameters": {
@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ============================================\n// HLJ DEV — Lead Score Engine v1.0\n// ============================================\n// Pontuação baseada na qualidade do lead vindo\n// do LeadChat da hljdev.com.br\n// ============================================\n\nconst lead = $input.first().json.body;\n\nlet score = 0;\nconst flags = [];\n\n// --- 1. Tem WhatsApp? (+20pts) ---\nif (lead.whatsapp && lead.whatsapp.length >= 10) {\n  score += 20;\n  flags.push('✅ WhatsApp informado');\n} else {\n  flags.push('⚠️ Sem WhatsApp');\n}\n\n// --- 2. Interesse de Alto Valor (+30pts) ---\nconst interessesQuentes = [\n  'Sistema Web/SaaS Exclusivo',\n  'Agente de I.A (Venda/Suporte)'\n];\nconst interessesMedio = [\n  'Mentoria Avançada em n8n'\n];\nif (interessesQuentes.some(i => lead.interesse?.includes(i))) {\n  score += 30;\n  flags.push('🔥 Interesse Premium (SaaS/Agente IA)');\n} else if (interessesMedio.some(i => lead.interesse?.includes(i))) {\n  score += 15;\n  flags.push('🌡️ Interesse Médio (Mentoria)');\n} else {\n  score += 5;\n  flags.push('❄️ Interesse padrão (Prompts/Outro)');\n}\n\n// --- 3. Mensagem com substância (+30pts) ---\nconst mensagem = lead.mensagem || '';\nif (mensagem.length > 200) {\n  score += 30;\n  flags.push('🔥 Mensagem detalhada (>200 chars)');\n} else if (mensagem.length > 80) {\n  score += 15;\n  flags.push('🌡️ Mensagem razoável (80-200 chars)');\n} else {\n  score += 5;\n  flags.push('❄️ Mensagem curta');\n}\n\n// --- 4. Email corporativo (+20pts) ---\nconst emailPessoal = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com.br', 'yahoo.com'];\nconst dominioEmail = lead.email?.split('@')[1]?.toLowerCase() ?? '';\nif (!emailPessoal.includes(dominioEmail) && dominioEmail.includes('.')) {\n  score += 20;\n  flags.push('🏢 Email corporativo detectado: ' + dominioEmail);\n} else {\n  flags.push('📧 Email pessoal: ' + dominioEmail);\n}\n\n// --- Classificação Final ---\nlet temperatura = '❄️ Frio';\nif (score >= 70) temperatura = '🔥 Muito Quente';\nelse if (score >= 45) temperatura = '🌡️ Morno';\nelse if (score >= 25) temperatura = '🌡️ Frio-Morno';\n\nreturn [\n  {\n    json: {\n      ...lead,\n      lead_score: score,\n      lead_temperatura: temperatura,\n      lead_flags: flags,\n      status: 'novo',\n      origem: lead.origem || 'site-hljdev',\n      created_at: new Date().toISOString()\n    }\n  }\n];"
+        "jsCode": "// ============================================\n// HLJ DEV — Lead Score Engine v1.0\n// ============================================\n// Pontuação baseada na qualidade do lead vindo\n// do LeadChat da hljdev.com.br\n// ============================================\n\nconst lead = $input.first().json.body;\n\nlet score = 0;\nconst flags = [];\n\n// --- 1. Tem WhatsApp? (+20pts) ---\nif (lead.whatsapp && lead.whatsapp.length >= 10) {\n  score += 20;\n  flags.push('✅ WhatsApp informado');\n} else {\n  flags.push('⚠️ Sem WhatsApp');\n}\n\n// --- 2. Interesse de Alto Valor (+30pts) ---\nconst interessesQuentes = [\n  'Sistema Web Personalizado',\n  'Site Institucional de Elite'\n];\nconst interessesMedio = [\n  'Automação de Processos (n8n)',\n  'Consultoria de Tecnologia'\n];\nif (interessesQuentes.some(i => lead.interesse?.includes(i))) {\n  score += 30;\n  flags.push('🔥 Interesse Premium (Site/Sistema Elite)');\n} else if (interessesMedio.some(i => lead.interesse?.includes(i))) {\n  score += 15;\n  flags.push('🌡️ Interesse Médio (Automação/Consultoria)');\n} else {\n  score += 5;\n  flags.push('❄️ Interesse padrão (Suporte/Outro)');\n}\n\n// --- 3. Mensagem com substância (+30pts) ---\nconst mensagem = lead.mensagem || '';\nif (mensagem.length > 200) {\n  score += 30;\n  flags.push('🔥 Mensagem detalhada (>200 chars)');\n} else if (mensagem.length > 80) {\n  score += 15;\n  flags.push('🌡️ Mensagem razoável (80-200 chars)');\n} else {\n  score += 5;\n  flags.push('❄️ Mensagem curta');\n}\n\n// --- 4. Email corporativo (+20pts) ---\nconst emailPessoal = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com.br', 'yahoo.com'];\nconst dominioEmail = lead.email?.split('@')[1]?.toLowerCase() ?? '';\nif (!emailPessoal.includes(dominioEmail) && dominioEmail.includes('.')) {\n  score += 20;\n  flags.push('🏢 Email corporativo detectado: ' + dominioEmail);\n} else {\n  flags.push('📧 Email pessoal: ' + dominioEmail);\n}\n\n// --- Classificação Final ---\nlet temperatura = '❄️ Frio';\nif (score >= 70) temperatura = '🔥 Muito Quente';\nelse if (score >= 45) temperatura = '🌡️ Morno';\nelse if (score >= 25) temperatura = '🌡️ Frio-Morno';\n\nreturn [\n  {\n    json: {\n      ...lead,\n      lead_score: score,\n      lead_temperatura: temperatura,\n      lead_flags: flags,\n      status: 'novo',\n      origem: lead.origem || 'site-hljdev',\n      created_at: new Date().toISOString()\n    }\n  }\n];"
       },
       "id": "node-score-engine",
       "name": "HLJ Score Engine",
@@ -27,44 +27,86 @@
     },
     {
       "parameters": {
-        "operation": "insert",
-        "schema": "public",
-        "table": "leads",
-        "columns": "nome,email,whatsapp,interesse,mensagem,lead_score,lead_temperatura,lead_flags,status,origem,created_at",
-        "additionalFields": {}
+        "url": "=https://nominatim.openstreetmap.org/search?format=json&q={{ encodeURIComponent($json.endereco) }}&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "User-Agent", "value": "HLJ-DEV-CRM" }
+          ]
+        },
+        "options": {}
       },
-      "id": "node-supabase-insert",
-      "name": "Supabase — Salvar Lead",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [760, 300],
-      "credentials": {
-        "postgres": {
-          "id": "SUPABASE_POSTGRES_CRED",
-          "name": "Supabase HLJ DEV"
-        }
-      }
+      "id": "node-geocoding",
+      "name": "Geocodificar Endereço",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [630, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Monta mensagem de alerta personalizada para o WhatsApp do Henrique\nconst lead = $('HLJ Score Engine').first().json;\n\nconst emoji = lead.lead_score >= 70 ? '🔥' : lead.lead_score >= 45 ? '🌡️' : '❄️';\nconst flagsText = lead.lead_flags.map(f => `  • ${f}`).join('\\n');\nconst waLink = lead.whatsapp ? `https://wa.me/55${lead.whatsapp.replace(/\\D/g,'')}?text=Oi%20${encodeURIComponent(lead.nome.split(' ')[0])}%2C%20vi%20sua%20mensagem%20no%20meu%20site!` : 'Sem WhatsApp';\n\nconst mensagem = `${emoji} *NOVO LEAD — HLJ DEV*\n━━━━━━━━━━━━━━━━━━━\n👤 *${lead.nome}*\n📧 ${lead.email}\n📱 ${lead.whatsapp || '—'}\n🎯 *Interesse:* ${lead.interesse}\n\n💬 *Mensagem:*\n_${lead.mensagem}_\n\n🧠 *Lead Score:* ${lead.lead_score}/100 — ${lead.lead_temperatura}\n${flagsText}\n━━━━━━━━━━━━━━━━━━━\n📲 *Responder:* ${waLink}`;\n\nreturn [{ json: { mensagem } }];"
+        "method": "POST",
+        "url": "http://supabase-rest:3000/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "nome", "value": "={{ $('HLJ Score Engine').item.json.nome }}" },
+            { "name": "email", "value": "={{ $('HLJ Score Engine').item.json.email }}" },
+            { "name": "whatsapp", "value": "={{ $('HLJ Score Engine').item.json.whatsapp }}" },
+            { "name": "interesse", "value": "={{ $('HLJ Score Engine').item.json.interesse }}" },
+            { "name": "mensagem", "value": "={{ $('HLJ Score Engine').item.json.mensagem }}" },
+            { "name": "endereco", "value": "={{ $('HLJ Score Engine').item.json.endereco }}" },
+            { "name": "latitude", "value": "={{ $json?.lat || null }}" },
+            { "name": "longitude", "value": "={{ $json?.lon || null }}" },
+            { "name": "lead_score", "value": "={{ $('HLJ Score Engine').item.json.lead_score }}" },
+            { "name": "lead_temperatura", "value": "={{ $('HLJ Score Engine').item.json.lead_temperatura }}" },
+            { "name": "lead_flags", "value": "={{ JSON.stringify($('HLJ Score Engine').item.json.lead_flags) }}" },
+            { "name": "status", "value": "={{ $('HLJ Score Engine').item.json.status }}" },
+            { "name": "origem", "value": "={{ $('HLJ Score Engine').item.json.origem }}" },
+            { "name": "created_at", "value": "={{ $('HLJ Score Engine').item.json.created_at }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-supabase-insert",
+      "name": "Supabase — Salvar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta mensagem de alerta personalizada para o WhatsApp do Henrique\nconst lead = $('HLJ Score Engine').first().json;\n\nconst emoji = lead.lead_score >= 70 ? '🔥' : lead.lead_score >= 45 ? '🌡️' : '❄️';\nconst flagsText = lead.lead_flags.map(f => `  • ${f}`).join('\\n');\n\nlet numLimpo = '';\nif (lead.whatsapp) {\n  numLimpo = lead.whatsapp.replace(/\\D/g, '');\n  if (!numLimpo.startsWith('55')) numLimpo = '55' + numLimpo;\n}\nconst waLink = numLimpo ? `https://wa.me/${numLimpo}?text=Oi%20${encodeURIComponent(lead.nome.split(' ')[0])}%2C%20vi%20sua%20mensagem%20no%20meu%20site!` : 'Sem WhatsApp';\n\nconst mensagem = `${emoji} *NOVO LEAD — HLJ DEV*\\n━━━━━━━━━━━━━━━━━━━\\n👤 *${lead.nome}*\\n📧 ${lead.email}\\n📱 ${lead.whatsapp || '—'}\\n🎯 *Interesse:* ${lead.interesse}\\n\\n💬 *Mensagem:*\\n_${lead.mensagem}_\\n\\n🧠 *Lead Score:* ${lead.lead_score}/100 — ${lead.lead_temperatura}\\n${flagsText}\\n━━━━━━━━━━━━━━━━━━━\\n📲 *Responder:* ${waLink}`;\n\nreturn [{ json: { mensagem } }];"
       },
       "id": "node-montar-alerta",
       "name": "Montar Mensagem WhatsApp",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [760, 480]
+      "position": [850, 480]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "url": "http://hlj-evolution:8080/message/sendText/hlj-principal",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "hlj_ev_apikey_2026_secure_key" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "number", "value": "={{ $env.SEU_WHATSAPP }}" },
+            { "name": "number", "value": "5548991013293" },
             { "name": "text", "value": "={{ $('Montar Mensagem WhatsApp').first().json.mensagem }}" }
           ]
         },
@@ -74,13 +116,7 @@
       "name": "WhatsApp — Alertar Henrique",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1020, 480],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "WHATSAPP_APIKEY_CRED",
-          "name": "Evolution API HLJ"
-        }
-      }
+      "position": [1100, 480]
     },
     {
       "parameters": {
@@ -92,7 +128,7 @@
       "name": "Resposta ao Site",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1020, 300]
+      "position": [1100, 300]
     }
   ],
   "connections": {
@@ -102,10 +138,13 @@
     "HLJ Score Engine": {
       "main": [
         [
-          { "node": "Supabase — Salvar Lead", "type": "main", "index": 0 },
+          { "node": "Geocodificar Endereço", "type": "main", "index": 0 },
           { "node": "Montar Mensagem WhatsApp", "type": "main", "index": 0 }
         ]
       ]
+    },
+    "Geocodificar Endereço": {
+      "main": [[{ "node": "Supabase — Salvar Lead", "type": "main", "index": 0 }]]
     },
     "Supabase — Salvar Lead": {
       "main": [[{ "node": "Resposta ao Site", "type": "main", "index": 0 }]]

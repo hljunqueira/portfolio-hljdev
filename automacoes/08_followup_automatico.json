@@ -1,0 +1,297 @@
+{
+  "name": "HLJ Follow-up Automático",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron - A Cada 2 Horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/leads?status=eq.novo&order=created_at.desc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-buscar",
+      "name": "Supabase - Buscar Leads Novos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $input.first().json;\nconst agora = Date.now();\nconst leads2h = leads.filter(lead => {\n  const criado = new Date(lead.created_at).getTime();\n  const horas = (agora - criado) / (1000 * 60 * 60);\n  return horas >= 2 && horas < 4;\n});\nreturn leads2h.map(lead => ({ json: lead }));"
+      },
+      "id": "node-filtrar",
+      "name": "Filtrar Leads 2h+",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {},
+          "conditions": [
+            {
+              "id": "cond",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        }
+      },
+      "id": "node-if",
+      "name": "Tem Leads?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\nconst score = parseInt(lead.score) || 0;\nlet msg = '';\nif (score >= 70) msg = `Oi ${lead.nome?.split(' ')[0]}! Vi seu interesse em automacao. Posso mostrar um case similar? Responda SIM!`;\nelse if (score >= 45) msg = `Oi ${lead.nome?.split(' ')[0]}! Separei material sobre automacao. Quer receber?`;\nelse msg = `Oi ${lead.nome?.split(' ')[0]}! Quer dicas semanais de IA? E gratis!`;\nconst numero = lead.telefone ? '55' + lead.telefone.replace(/\\D/g, '') : null;\nreturn [{ json: { lead_id: lead.id, lead_nome: lead.nome, numero, mensagem: msg, score } }];"
+      },
+      "id": "node-msg",
+      "name": "Montar Mensagem por Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.numero }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagem }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-enviar",
+      "name": "WhatsApp - Enviar Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/leads?id=eq.{{ $json.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "followup_enviado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-update",
+      "name": "Supabase - Atualizar Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('[HLJ] Sem leads para follow-up');\nreturn [{ json: { status: 'sem_leads' } }];"
+      },
+      "id": "node-log",
+      "name": "Log - Sem Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Cron - A Cada 2 Horas": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Buscar Leads Novos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Buscar Leads Novos": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Leads 2h+",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Leads 2h+": {
+      "main": [
+        [
+          {
+            "node": "Tem Leads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Leads?": {
+      "main": [
+        [
+          {
+            "node": "Montar Mensagem por Score",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log - Sem Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Mensagem por Score": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp - Enviar Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp - Enviar Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Atualizar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "CRM"
+    },
+    {
+      "name": "Follow-up"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "08-hlj-followup-automatico"
+}

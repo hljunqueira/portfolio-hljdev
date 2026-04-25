@@ -1,0 +1,233 @@
+{
+  "name": "HLJ Postagem Automatica Instagram",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron - Diario 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const temas = [\n  'Automacao de Atendimento WhatsApp',\n  'Agentes de IA para Vendas 24/7',\n  'Sistemas Web Personalizados',\n  'Eliminacao de Trabalho Bracal',\n  'Escala de Negocios com Tecnologia',\n  'Produtividade com IA',\n  'Cases de Sucesso em Automacao'\n];\nconst dia = new Date().getDay();\nreturn [{ json: { tema: temas[dia], dia_semana: dia } }];"
+      },
+      "id": "node-tema",
+      "name": "Selecionar Tema do Dia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama-3.3-70b-versatile"
+            },
+            {
+              "name": "messages",
+              "value": "={{ JSON.stringify([{role:'system',content:'Voce e especialista em marketing digital e automacao com IA.'},{role:'user',content:'Crie legenda ENG AJADORA para Instagram sobre: '+$json.tema+'. REGRAS: 1)Max 2200 chars 2)Tom profissional 3)Hook impactante 4)CTA: Link na bio → hljdev.com.br 5)3-5 hashtags 6)Max 5 emojis 7)Foque em dores do empresario'}]) }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.8
+            },
+            {
+              "name": "max_tokens",
+              "value": 500
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-groq",
+      "name": "Groq - Gerar Legenda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/{{ $env.INSTAGRAM_PAGE_ID }}/media",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.META_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1080&h=1080&fit=crop"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('Groq - Gerar Legenda').first().json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-publicar",
+      "name": "Meta API - Publicar Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $env.SEU_WHATSAPP }}"
+            },
+            {
+              "name": "text",
+              "value": "✅ POST PUBLICADO!\n\nTema: {{ $('Selecionar Tema do Dia').first().json.tema }}\n\n📱 Instagram: @hljdev"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-notificar",
+      "name": "WhatsApp - Notificar Henrique",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron - Diario 9h": {
+      "main": [
+        [
+          {
+            "node": "Selecionar Tema do Dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selecionar Tema do Dia": {
+      "main": [
+        [
+          {
+            "node": "Groq - Gerar Legenda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq - Gerar Legenda": {
+      "main": [
+        [
+          {
+            "node": "Meta API - Publicar Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta API - Publicar Post": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp - Notificar Henrique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "Instagram"
+    },
+    {
+      "name": "Conteudo"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "13-hlj-postagem-automatica"
+}

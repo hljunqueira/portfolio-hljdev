@@ -2,6 +2,12 @@
 
 Pasta contendo os fluxos de automação prontos para importar no N8N em `n8n.hljdev.com.br`.
 
+**Status da Revisão:** ✅ REVISÃO TÉCNICA CONCLUÍDA (07/04/2026)  
+**Workflows Corrigidos:** `04_instagram_dm_lead.json` (JSON inválido corrigido + resposta webhook adicionada)  
+**Documentação Completa:** Ver `docs/REVISAO_TECHNICA_WORKFLOWS.md`
+
+---
+
 ## 📋 Índice de Fluxos
 
 | # | Arquivo | Nome do Fluxo | Gatilho | Função |
@@ -36,6 +42,106 @@ META_VERIFY_TOKEN=hlj-dev-token-secreto-2026
 META_ACCESS_TOKEN=EAAxxxxx... (gerado no Meta for Developers)
 INSTAGRAM_PAGE_ID=SEU_PAGE_ID_INSTAGRAM
 ```
+
+---
+
+## ⚠️ PRÉ-REQUISITOS ANTES DA IMPORTAÇÃO
+
+### 1. Configurar Variáveis de Ambiente no N8N
+
+**MÉTODO CORRETO: Via docker-compose.yml** (API não suporta na Community Edition)
+
+#### Opção A: Automática (Recomendada) - Executar Script
+
+```powershell
+# No Windows PowerShell (no seu PC local)
+cd "c:\Users\Henrique - PC\Desktop\Projetos Dev\portfolio-hljdev"
+.\scripts\atualizar-env-n8n.ps1
+```
+
+O script irá:
+1. ✅ Fazer backup do docker-compose.yml atual
+2. ✅ Adicionar as 8 variáveis de ambiente
+3. ✅ Reiniciar o N8N automaticamente
+
+#### Opção B: Manual - Editar docker-compose.yml
+
+**Acessar VPS:**
+```bash
+ssh root@23.80.89.116
+cd /root/hlj-infra/n8n
+nano docker-compose.yml
+```
+
+**Adicionar as seguintes variáveis em `environment:`:**
+
+```yaml
+services:
+  n8n:
+    environment:
+      # Supabase (PostgreSQL)
+      - SUPABASE_HOST=supabase.hljdev.com.br
+      - SUPABASE_PORT=5432
+      - SUPABASE_DB=postgres
+      - SUPABASE_USER=postgres
+      - SUPABASE_PASS=YOUR_SUPABASE_PASSWORD
+      
+      # WhatsApp (Evolution API)
+      - WHATSAPP_API_URL=https://evolution.hljdev.com.br
+      - WHATSAPP_INSTANCE=hlj-principal
+      - SEU_WHATSAPP=5548991013293
+```
+
+**Salvar e reiniciar:**
+```bash
+docker compose down
+docker compose up -d
+```
+
+**Verificar se variáveis foram aplicadas:**
+```bash
+docker exec hlj-n8n env | grep SUPABASE
+docker exec hlj-n8n env | grep WHATSAPP
+```
+
+### 2. Configurar Supabase (SQL):
+
+**Executar no SQL Editor do Supabase:**
+```sql
+-- Adicionar coluna updated_at se não existir
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_flags TEXT[];
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS interesse TEXT;
+
+-- Criar trigger para atualizar updated_at automaticamente
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_leads_updated_at BEFORE UPDATE ON leads
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+### 3. Criar Credenciais no N8N:
+
+**A) Supabase HLJ DEV (PostgreSQL):**
+- Host: `db.supabase.hljdev.com.br` (ou IP interno da VPS)
+- Port: `5432`
+- Database: `postgres`
+- User: `postgres`
+- Password: `YOUR_SUPABASE_PASSWORD`
+- SSL: `Required`
+
+**B) Evolution API HLJ (HTTP Header Auth):**
+- Header Name: `apikey`
+- Header Value: `[SUA API KEY DA EVOLUTION API]`
+
+### 4. Workflows 01, 02, 03 - Pronto para importar ✅
+### 5. Workflow 04 - SÓ importar após configurar Meta Graph API (ver seção abaixo)
 
 ---
 

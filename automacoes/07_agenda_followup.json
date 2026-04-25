@@ -1,0 +1,161 @@
+{
+  "name": "HLJ Agenda Follow-ups",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "node-cron",
+      "name": "Cron - Seg-Sex 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/tarefas?status=eq.pendente&data=eq.{{ $now.toFormat('yyyy-MM-dd') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-buscar-tarefas",
+      "name": "Supabase - Buscar Tarefas do Dia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tarefas = $input.first().json;\nconst lista = tarefas.slice(0, 10).map((t, i) => `${i+1}. ${t.titulo} - ${t.lead_nome}`).join('\\n');\nconst msg = tarefas.length > 0 ? `📋 AGENDA DO DIA\\n━━━━━━━━━━━━━━━\\n${lista}\\n━━━━━━━━━━━━━━━\\nTotal: ${tarefas.length} tarefa(s)` : '✅ Nenhuma tarefa para hoje!';\nreturn [{ json: { mensagem: msg, total: tarefas.length } }];"
+      },
+      "id": "node-resumo",
+      "name": "Montar Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $env.SEU_WHATSAPP }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagem }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-enviar",
+      "name": "WhatsApp - Enviar Agenda",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1020,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron - Seg-Sex 9h": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Buscar Tarefas do Dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Buscar Tarefas do Dia": {
+      "main": [
+        [
+          {
+            "node": "Montar Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Resumo": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp - Enviar Agenda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "Agenda"
+    }
+  ],
+  "triggerCount": 0,
+  "versionId": "07-hlj-agenda-followup"
+}

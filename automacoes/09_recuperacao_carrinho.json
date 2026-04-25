@@ -1,0 +1,222 @@
+{
+  "name": "HLJ Recuperação Carrinho Abandonado",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "kiwify-carrinho",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook - Kiwify Carrinho",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "hlj-carrinho-abandonado"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "hours"
+      },
+      "id": "node-wait-1h",
+      "name": "Wait 1 Hora",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=55{{ $('Webhook - Kiwify Carrinho').first().json.body.customer.mobile.replace(/\\D/g, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "=Oi {{ $('Webhook - Kiwify Carrinho').first().json.body.customer.name }}! Vi que quase finalizou sua compra. Precisa de ajuda? Estou aqui! 😊"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-msg-1h",
+      "name": "WhatsApp - Mensagem 1h",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 23,
+        "unit": "hours"
+      },
+      "id": "node-wait-24h",
+      "name": "Wait 24 Horas",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=55{{ $('Webhook - Kiwify Carrinho').first().json.body.customer.mobile.replace(/\\D/g, '') }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Webhook - Kiwify Carrinho').first().json.body.customer.name }}, separei um cupom de 10% OFF: CARRINHO10 🎁 Finalize agora!"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-msg-24h",
+      "name": "WhatsApp - Cupom 24h",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\": true}",
+        "options": {}
+      },
+      "id": "node-resposta",
+      "name": "Resposta OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Kiwify Carrinho": {
+      "main": [
+        [
+          {
+            "node": "Wait 1 Hora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1 Hora": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp - Mensagem 1h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp - Mensagem 1h": {
+      "main": [
+        [
+          {
+            "node": "Wait 24 Horas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 24 Horas": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp - Cupom 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp - Cupom 24h": {
+      "main": [
+        [
+          {
+            "node": "Resposta OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "Kiwify"
+    },
+    {
+      "name": "Recuperação"
+    }
+  ],
+  "triggerCount": 1,
+  "versionId": "09-hlj-recuperacao-carrinho"
+}

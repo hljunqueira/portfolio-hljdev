@@ -1,217 +1,138 @@
 {
-  "name": "HLJ Instagram DM → Lead",
+  "name": "INSTAGRAM_DM_QUALIFIER_AI",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "instagram-dm",
-        "responseMode": "lastNode",
-        "options": {}
-      },
-      "id": "node-webhook-ig",
-      "name": "Webhook — Instagram DM (Meta Graph API)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [240, 300],
-      "webhookId": "hlj-instagram-dm"
-    },
-    {
-      "parameters": {
-        "httpMethod": "GET",
-        "path": "instagram-dm",
+        "path": "insta-lead-direct",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "node-webhook-ig-verify",
-      "name": "Webhook — Verificação Meta (GET)",
+      "id": "node-webhook-post",
+      "name": "Webhook POST",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 480],
-      "webhookId": "hlj-instagram-dm",
-      "notes": "A Meta faz uma requisição GET para verificar o webhook. Este nó responde com o hub.challenge."
+      "position": [0, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Responde ao desafio de verificação da Meta\nconst query = $input.first().json.query;\nif (query['hub.mode'] === 'subscribe' && query['hub.verify_token'] === $env.META_VERIFY_TOKEN) {\n  return [{ json: { challenge: query['hub.challenge'] } }];\n}\nreturn [{ json: { error: 'Token inválido' } }];"
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    senderId: body.entry?.[0]?.messaging?.[0]?.sender?.id,\n    text: body.entry?.[0]?.messaging?.[0]?.message?.text\n  }\n}];"
       },
-      "id": "node-meta-verify",
-      "name": "Responder Verificação Meta",
+      "id": "node-parser",
+      "name": "Parser",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 480]
+      "position": [200, 300]
     },
     {
       "parameters": {
-        "jsCode": "// ============================================\n// HLJ DEV — Instagram DM Parser v1.0\n// ============================================\n// Extrai a mensagem recebida via Instagram DM\n// usando o Meta Graph API Webhook\n// ============================================\n\nconst body = $input.first().json.body;\n\n// Estrutura do payload Meta Messenger/Instagram\nconst entry = body.entry?.[0];\nconst messaging = entry?.messaging?.[0];\n\nif (!messaging) {\n  return [{ json: { ignorar: true, motivo: 'Sem messaging event' } }];\n}\n\nconst remetenteId = messaging.sender?.id;\nconst texto = messaging.message?.text || '';\nconst timestamp = messaging.timestamp;\n\n// Ignora mensagens enviadas pelo próprio bot (echo)\nif (messaging.message?.is_echo) {\n  return [{ json: { ignorar: true, motivo: 'Echo da própria conta' } }];\n}\n\n// Detecta intenção de interesse em serviço\nconst PALAVRAS_QUENTES = ['sistema', 'agente', 'automação', 'automatizar', 'bot', 'ia', 'inteligência', 'site', 'lp', 'landing', 'fazer', 'quero', 'preciso', 'orçamento', 'valor', 'preço'];\nconst textoLower = texto.toLowerCase();\nconst ehInteresse = PALAVRAS_QUENTES.some(p => textoLower.includes(p));\n\nreturn [{\n  json: {\n    ignorar: false,\n    ig_sender_id: remetenteId,\n    mensagem_original: texto,\n    eh_interesse: ehInteresse,\n    timestamp: new Date(timestamp * 1000).toISOString(),\n    canal: 'instagram_dm'\n  }\n}];"
-      },
-      "id": "node-parse-ig",
-      "name": "Parsear DM do Instagram",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [500, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {},
-          "conditions": [
-            {
-              "id": "cond-ignorar",
-              "leftValue": "={{ $json.ignorar }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "false" }
-            }
-          ]
-        }
-      },
-      "id": "node-if-ignorar",
-      "name": "Deve Processar?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [760, 300]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {},
-          "conditions": [
-            {
-              "id": "cond-interesse",
-              "leftValue": "={{ $json.eh_interesse }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true" }
-            }
-          ]
-        }
-      },
-      "id": "node-if-interesse",
-      "name": "É Mensagem de Interesse?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1020, 200]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://graph.facebook.com/v19.0/{{ $env.INSTAGRAM_PAGE_ID }}/messages",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "contentType": "json",
-        "jsonOutput": "={\"recipient\": {\"id\": \"{{ $('Parsear DM do Instagram').first().json.ig_sender_id }}\"}, \"message\": {\"text\": \"Oi! 👋 Aqui é o sistema da HLJ DEV. Recebi sua mensagem e já avisamos a equipe. Em breve um especialista te responderá. Enquanto isso, você pode ver o que fazemos em: hljdev.com.br ⚡\"}}",
         "options": {}
       },
-      "id": "node-resposta-ig-interesse",
-      "name": "Instagram — Resposta Automática (Interesse)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1280, 120],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "META_ACCESS_TOKEN_CRED",
-          "name": "Meta Graph API Token"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "insert",
-        "schema": "public",
-        "table": "leads",
-        "columns": "nome,email,mensagem,status,origem,lead_score,lead_temperatura,created_at",
-        "additionalFields": {}
-      },
-      "id": "node-supabase-ig-lead",
-      "name": "Supabase — Salvar Lead do Instagram",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [1280, 280],
-      "credentials": {
-        "postgres": {
-          "id": "SUPABASE_POSTGRES_CRED",
-          "name": "Supabase HLJ DEV"
-        }
-      },
-      "parameters": {
-        "operation": "insert",
-        "schema": "public",
-        "table": "leads",
-        "dataMode": "defineBelow",
-        "valuesToSend": {
-          "values": [
-            { "column": "nome", "value": "=Instagram: {{ $('Parsear DM do Instagram').first().json.ig_sender_id }}" },
-            { "column": "mensagem", "value": "={{ $('Parsear DM do Instagram').first().json.mensagem_original }}" },
-            { "column": "status", "value": "novo" },
-            { "column": "origem", "value": "instagram_dm" },
-            { "column": "lead_score", "value": "=30" },
-            { "column": "lead_temperatura", "value": "🌡️ Morno" },
-            { "column": "created_at", "value": "={{ $('Parsear DM do Instagram').first().json.timestamp }}" }
-          ]
-        },
-        "additionalFields": {}
-      }
+      "id": "node-respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [400, 300]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "url": "https://supabase.hljdev.com.br/rest/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "YOUR_SUPABASE_ANON_KEY" },
+            { "name": "Authorization", "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY" }
+          ]
+        },
         "sendBody": true,
+        "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            { "name": "number", "value": "={{ $env.SEU_WHATSAPP }}" },
-            { "name": "text", "value": "=📸 *NOVO DM — INSTAGRAM | HLJ DEV*\n━━━━━━━━━━━━━━━━━━━\n👤 ID Instagram: {{ $('Parsear DM do Instagram').first().json.ig_sender_id }}\n💬 *Mensagem:*\n_{{ $('Parsear DM do Instagram').first().json.mensagem_original }}_\n━━━━━━━━━━━━━━━━━━━\n🔗 Responder: instagram.com/direct/t/{{ $('Parsear DM do Instagram').first().json.ig_sender_id }}" }
+            { "name": "nome", "value": "=\"IG: \" + $json.senderId" },
+            { "name": "mensagem", "value": "=$json.text" },
+            { "name": "origem", "value": "Instagram" }
           ]
         },
         "options": {}
       },
-      "id": "node-whatsapp-ig-alerta",
-      "name": "WhatsApp — Alertar Henrique (DM Instagram)",
+      "id": "node-supabase",
+      "name": "Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1540, 200],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "WHATSAPP_APIKEY_CRED",
-          "name": "Evolution API HLJ"
-        }
-      }
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    model: \"llama-3.3-70b-versatile\",\n    messages: [\n      {\n        role: \"system\",\n        content: \"Você é o Assistente Virtual da HLJ DEV. Qualifique o lead perguntando: Nome, E-mail, WhatsApp, CEP e Interesse.\"\n      },\n      {\n        role: \"user\",\n        content: $input.first().json.text\n      }\n    ]\n  }\n}];"
+      },
+      "id": "node-prep-groq",
+      "name": "Prep Groq",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_GROQ_API_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-groq",
+      "name": "Groq",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    recipient: { id: $(\"Parser\").first().json.senderId },\n    message: { text: $input.first().json.choices[0].message.content }\n  }\n}];"
+      },
+      "id": "node-prep-reply",
+      "name": "Prep Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_FB_IG_TOKEN" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-reply",
+      "name": "Instagram Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 400]
     }
   ],
   "connections": {
-    "Webhook — Instagram DM (Meta Graph API)": {
-      "main": [[{ "node": "Parsear DM do Instagram", "type": "main", "index": 0 }]]
-    },
-    "Webhook — Verificação Meta (GET)": {
-      "main": [[{ "node": "Responder Verificação Meta", "type": "main", "index": 0 }]]
-    },
-    "Parsear DM do Instagram": {
-      "main": [[{ "node": "Deve Processar?", "type": "main", "index": 0 }]]
-    },
-    "Deve Processar?": {
-      "main": [
-        [{ "node": "É Mensagem de Interesse?", "type": "main", "index": 0 }],
-        []
-      ]
-    },
-    "É Mensagem de Interesse?": {
-      "main": [
-        [
-          { "node": "Instagram — Resposta Automática (Interesse)", "type": "main", "index": 0 },
-          { "node": "Supabase — Salvar Lead do Instagram", "type": "main", "index": 0 },
-          { "node": "WhatsApp — Alertar Henrique (DM Instagram)", "type": "main", "index": 0 }
-        ],
-        [
-          { "node": "WhatsApp — Alertar Henrique (DM Instagram)", "type": "main", "index": 0 }
-        ]
-      ]
-    }
+    "Webhook POST": { "main": [[{ "node": "Parser", "type": "main", "index": 0 }]] },
+    "Parser": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "Respond to Webhook": { "main": [[{ "node": "Supabase", "type": "main", "index": 0 }, { "node": "Prep Groq", "type": "main", "index": 0 }]] },
+    "Prep Groq": { "main": [[{ "node": "Groq", "type": "main", "index": 0 }]] },
+    "Groq": { "main": [[{ "node": "Prep Reply", "type": "main", "index": 0 }]] },
+    "Prep Reply": { "main": [[{ "node": "Instagram Reply", "type": "main", "index": 0 }]] }
   },
-  "pinData": {},
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true
-  },
-  "tags": [{ "name": "HLJ DEV" }, { "name": "Instagram" }, { "name": "Meta API" }],
-  "triggerCount": 1,
-  "versionId": "04-hlj-instagram-dm"
+  "settings": { "executionOrder": "v1" }
 }

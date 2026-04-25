@@ -5,10 +5,10 @@ import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 
 const rotatingWords = [
-  "Máquinas de Vendas.",
-  "Agentes de I.A.",
-  "Vendas 24/7.",
-  "Tecnologia de Ponta.",
+  "Sites que Vendem Mais.",
+  "Sistemas de Gestão Total.",
+  "Suporte e Evolução VIP.",
+  "Software sob Medida.",
 ];
 
 export function Hero() {
@@ -94,7 +94,7 @@ export function Hero() {
           <motion.h1
             className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter text-foreground leading-[1.1] px-4"
           >
-            {["Escale", "sua", "operação", "com"].map((word, i) => (
+            {["Eleve", "o", "nível", "do", "seu", "negócio", "com"].map((word, i) => (
               <motion.span
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -138,7 +138,7 @@ export function Hero() {
               <a href="#contact">
                 <span className="relative z-10 flex items-center gap-3">
                   <Terminal className="h-5 w-5" />
-                  Ativar Máquina de Vendas
+                  Solicitar Projeto de Elite
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
                 </span>
                 

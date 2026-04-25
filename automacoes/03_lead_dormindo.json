@@ -20,21 +20,33 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT id, nome, email, whatsapp, interesse, mensagem, lead_score, lead_temperatura, status, created_at, updated_at\nFROM public.leads\nWHERE\n  status IN ('novo', 'em_contato')\n  AND updated_at < NOW() - INTERVAL '48 hours'\nORDER BY lead_score DESC, updated_at ASC\nLIMIT 20;",
-        "additionalFields": {}
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/leads?status=in.(novo,em_contato)&order=lead_score.desc,updated_at.asc&limit=20",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c" },
+            { "name": "Authorization", "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {}
       },
       "id": "node-buscar-parados",
       "name": "Supabase — Buscar Leads Parados",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [500, 300],
-      "credentials": {
-        "postgres": {
-          "id": "SUPABASE_POSTGRES_CRED",
-          "name": "Supabase HLJ DEV"
-        }
-      }
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtra leads parados há mais de 48h\nconst leads = $input.all().map(item => item.json);\n\nconst agora = Date.now();\nconst leadsParados = leads.filter(lead => {\n  const ultimaAtualizacao = new Date(lead.updated_at).getTime();\n  const horasParado = (agora - ultimaAtualizacao) / (1000 * 60 * 60);\n  return horasParado > 48;\n});\n\nreturn leadsParados.map(lead => ({ json: lead }));"
+      },
+      "id": "node-filtrar-48h",
+      "name": "Filtrar Leads >48h",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 300]
     },
     {
       "parameters": {
@@ -70,6 +82,13 @@
       "parameters": {
         "method": "POST",
         "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.WHATSAPP_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -83,13 +102,7 @@
       "name": "WhatsApp — Enviar Relatório",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1280, 200],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "WHATSAPP_APIKEY_CRED",
-          "name": "Evolution API HLJ"
-        }
-      }
+      "position": [1280, 200]
     },
     {
       "parameters": {
@@ -107,6 +120,9 @@
       "main": [[{ "node": "Supabase — Buscar Leads Parados", "type": "main", "index": 0 }]]
     },
     "Supabase — Buscar Leads Parados": {
+      "main": [[{ "node": "Filtrar Leads >48h", "type": "main", "index": 0 }]]
+    },
+    "Filtrar Leads >48h": {
       "main": [[{ "node": "Tem Leads Parados?", "type": "main", "index": 0 }]]
     },
     "Tem Leads Parados?": {

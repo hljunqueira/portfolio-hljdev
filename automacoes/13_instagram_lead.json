@@ -1,0 +1,158 @@
+{
+  "name": "HLJ CRM — Integrador Instagram",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "instagram-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-verify",
+      "name": "Webhook — Verificação Meta (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 200],
+      "webhookId": "instagram-lead"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "instagram-lead",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "node-webhook-post",
+      "name": "Webhook — Mensagem Instagram (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 420],
+      "webhookId": "instagram-lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.query['hub.verify_token'] }}",
+              "value2": "HLJ_INSTA_2026"
+            }
+          ]
+        }
+      },
+      "id": "node-check-token",
+      "name": "IF — Token Válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-challenge",
+      "name": "Respond — Retornar Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 140]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "node-respond-forbidden",
+      "name": "Respond — Token Inválido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.item.json.body;\nconst entries = body.entry || [];\n\nlet messages = [];\n\nfor (const entry of entries) {\n  for (const change of entry.changes || []) {\n    const val = change.value;\n    for (const msg of val.messages || []) {\n      messages.push({\n        instagram_id: msg.from,\n        nome: val.contacts?.[0]?.profile?.name || `Instagram_${msg.from}`,\n        mensagem: msg.type === 'text' ? msg.text?.body : `[${msg.type}]`,\n        whatsapp: null,\n        email: null,\n        origem: 'Instagram',\n        status: 'novo'\n      });\n    }\n    for (const comment of val.comments || []) {\n      messages.push({\n        instagram_id: comment.from?.id,\n        nome: comment.from?.name || `Instagram_${comment.from?.id}`,\n        mensagem: comment.text,\n        whatsapp: null,\n        email: null,\n        origem: 'Instagram',\n        status: 'novo'\n      });\n    }\n  }\n}\n\nreturn messages.map(m => ({ json: m }));"
+      },
+      "id": "node-parse-message",
+      "name": "Code — Extrair Lead do Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://supabase.hljdev.com.br/rest/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal,resolution=ignore-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-supabase-insert",
+      "name": "Supabase — Criar Lead Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evo.hljdev.com.br/message/sendText/HLJDev",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_EVOLUTION_API_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: 'SEU_NUMERO_WA@s.whatsapp.net', text: `💖 NOVO LEAD DO INSTAGRAM!\\n\\n👤 Nome: ${$json.nome}\\n💬 Mensagem: ${$json.mensagem}\\n\\nAcesse o Pipeline: https://hljdev.com.br/admin/pipeline` }) }}",
+        "options": {}
+      },
+      "id": "node-notify-whatsapp",
+      "name": "Evolution API — Alertar no WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 420]
+    }
+  ],
+  "connections": {
+    "Webhook — Verificação Meta (GET)": {
+      "main": [[{ "node": "IF — Token Válido?", "type": "main", "index": 0 }]]
+    },
+    "IF — Token Válido?": {
+      "main": [
+        [{ "node": "Respond — Retornar Challenge", "type": "main", "index": 0 }],
+        [{ "node": "Respond — Token Inválido", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook — Mensagem Instagram (POST)": {
+      "main": [[{ "node": "Code — Extrair Lead do Payload", "type": "main", "index": 0 }]]
+    },
+    "Code — Extrair Lead do Payload": {
+      "main": [[{ "node": "Supabase — Criar Lead Instagram", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Criar Lead Instagram": {
+      "main": [[{ "node": "Evolution API — Alertar no WhatsApp", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

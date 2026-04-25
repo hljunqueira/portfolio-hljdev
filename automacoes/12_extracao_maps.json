@@ -1,0 +1,176 @@
+{
+  "name": "HLJ Extração Maps v1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hlj-extracao-maps",
+        "responseMode": "onReceived",
+        "options": {
+          "noCors": false
+        }
+      },
+      "id": "node-webhook",
+      "name": "Webhook — Iniciar Extração",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "hlj-extracao-maps"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://supabase.hljdev.com.br/rest/v1/campanhas_maps?id=eq.{{ $item(0).$node['Webhook — Iniciar Extração'].json.body.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "status", "value": "running" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-update-status-running",
+      "name": "Supabase — Status: Rodando",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/place/textsearch/json?query={{ encodeURIComponent($node['Webhook — Iniciar Extração'].json.body.keyword) }} in {{ encodeURIComponent($node['Webhook — Iniciar Extração'].json.body.location) }}&key=AIzaSyDwiBVPbsn2i6zX1oZ26E3_9wzcGfBFp-0",
+        "options": {}
+      },
+      "id": "node-google-places",
+      "name": "Google Places — Buscar Negócios",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "id": "node-split",
+      "name": "Split Results",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/place/details/json?place_id={{ $json.place_id }}&fields=name,formatted_address,formatted_phone_number,geometry,website,rating,user_ratings_total,opening_hours,price_level,types,photos,business_status&key=AIzaSyDwiBVPbsn2i6zX1oZ26E3_9wzcGfBFp-0",
+        "options": {}
+      },
+      "id": "node-place-details",
+      "name": "Google — Detalhes do Local",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://supabase.hljdev.com.br/rest/v1/leads?on_conflict=google_place_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "resolution=merge-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "nome", "value": "={{ $json.result.name }}" },
+            { "name": "google_place_id", "value": "={{ $node[\"Split Results\"].json.place_id }}" },
+            { "name": "website", "value": "={{ $json.result.website || '' }}" },
+            { "name": "rating", "value": "={{ $json.result.rating || 0 }}" },
+            { "name": "user_ratings_total", "value": "={{ $json.result.user_ratings_total || 0 }}" },
+            { "name": "categorias", "value": "={{ $json.result.types || [] }}" },
+            { "name": "horario", "value": "={{ $json.result.opening_hours || {} }}" },
+            { "name": "nivel_preco", "value": "={{ $json.result.price_level || 0 }}" },
+            { "name": "foto_url", "value": "={{ $json.result.photos ? 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=' + $json.result.photos[0].photo_reference + '&key=AIzaSyDwiBVPbsn2i6zX1oZ26E3_9wzcGfBFp-0' : '' }}" },
+            { "name": "business_status", "value": "={{ $json.result.business_status || '' }}" },
+            { "name": "whatsapp", "value": "={{ $json.result.formatted_phone_number || '' }}" },
+            { "name": "endereco", "value": "={{ $json.result.formatted_address }}" },
+            { "name": "latitude", "value": "={{ $json.result.geometry.location.lat }}" },
+            { "name": "longitude", "value": "={{ $json.result.geometry.location.lng }}" },
+            { "name": "interesse", "value": "={{ $item(0).$node['Webhook — Iniciar Extração'].json.body.keyword }}" },
+            { "name": "origem", "value": "=Extração: {{ $item(0).$node['Webhook — Iniciar Extração'].json.body.name }}" },
+            { "name": "google_maps_url", "value": "={{ $json.result.url }}" },
+            { "name": "reviews", "value": "={{ $json.result.reviews || [] }}" },
+            { "name": "status", "value": "novo" },
+            { "name": "lead_score", "value": "50" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-save-lead",
+      "name": "Supabase — Salvar Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://supabase.hljdev.com.br/rest/v1/campanhas_maps?id=eq.{{ $item(0).$node['Webhook — Iniciar Extração'].json.body.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "status", "value": "completed" },
+            { "name": "leads_found", "value": "={{ $item(0).$node['Google Places — Buscar Negócios'].json.results.length }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-update-status-done",
+      "name": "Supabase — Status: Finalizado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — Iniciar Extração": {
+      "main": [[{ "node": "Supabase — Status: Rodando", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Status: Rodando": {
+      "main": [[{ "node": "Google Places — Buscar Negócios", "type": "main", "index": 0 }]]
+    },
+    "Google Places — Buscar Negócios": {
+      "main": [[{ "node": "Split Results", "type": "main", "index": 0 }]]
+    },
+    "Split Results": {
+      "main": [[{ "node": "Google — Detalhes do Local", "type": "main", "index": 0 }]]
+    },
+    "Google — Detalhes do Local": {
+      "main": [[{ "node": "Supabase — Salvar Lead", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Salvar Lead": {
+      "main": [[{ "node": "Supabase — Status: Finalizado", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

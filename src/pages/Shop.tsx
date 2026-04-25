@@ -1,69 +1,91 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles, Zap, BrainCircuit, Rocket, ArrowLeft, ShoppingCart, Star, Instagram, Linkedin } from "lucide-react";
+import { 
+  CheckCircle2, Sparkles, Zap, Code2, 
+  Rocket, ArrowLeft, MessageSquare, Star, 
+  ExternalLink, Building2, Layout, ShieldCheck,
+  Instagram, Linkedin
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
-const products = [
+const solutions = [
   {
-    id: "prompts",
-    title: "Mega Pack de Prompts Elite",
-    subtitle: "Acelerador de Resultados",
-    description: "Os 50+ prompts secretos que economizam 4 horas do seu dia no ChatGPT e Gemini.",
-    price: "29,90",
+    id: "sites",
+    title: "Sites Institucionais de Elite",
+    subtitle: "Presença Digital que Vende",
+    description: "Sua vitrine 24h por dia. Sites ultra-rápidos, otimizados para o Google e focados em converter visitantes em clientes no WhatsApp.",
+    price: "Sob Consulta",
     features: [
-      "Prompts de Escrita Criativa",
-      "Prompts para Análise de Dados",
-      "Templates de E-mail de Vendas",
-      "Comandos de Programação/Código",
-      "Acesso Vitalício + Atualizações"
+      "Design Exclusivo (Zero Templates)",
+      "Otimização Máxima para Mobile",
+      "Integração Direta com CRM/WhatsApp",
+      "Velocidade de Carregamento Incrível",
+      "SEO para Busca Regional/Nacional"
     ],
-    icon: <Sparkles className="h-8 w-8 text-primary" />,
+    icon: <Layout className="h-8 w-8 text-primary" />,
     popular: false,
     gradient: "from-primary/20 to-transparent"
   },
   {
-    id: "course",
-    title: "I.A. Masterclass Pro",
-    subtitle: "Treinamento Completo",
-    description: "Domine o ChatGPT e Gemini. Do prompt básico à engenharia complexa para negócios.",
-    price: "49,90",
+    id: "sistemas",
+    title: "Sistemas Web e SaaS",
+    subtitle: "Gestão e Operação Total",
+    description: "Software sob medida para o seu processo. Abandone planilhas lentas e tenha um dashboard centralizado para sua empresa.",
+    price: "Projetos sob Medida",
     features: [
-      "Módulos ChatGPT & Gemini",
-      "Vencer Alucinações da I.A.",
-      "Criação de Personas Reais",
-      "Workflows de Produtividade",
-      "Certificado de Conclusão"
+      "Dashboards em Tempo Real",
+      "Gestão de Leads e Clientes",
+      "Automação de Tarefas Repetitivas",
+      "Acesso Seguro via Cloud",
+      "Arquitetura Escalável (Sem Limites)"
     ],
-    icon: <BrainCircuit className="h-8 w-8 text-primary" />,
+    icon: <Code2 className="h-8 w-8 text-primary" />,
     popular: true,
     gradient: "from-primary/30 via-primary/10 to-transparent"
   },
   {
-    id: "bundle",
-    title: "Acesso Premium Total",
-    subtitle: "O Pacote Definitivo",
-    description: "Leve o Pack de Prompts + Masterclass Completa + Suporte e Materiais Extras.",
-    price: "99,90",
+    id: "sustentacao",
+    title: "Squad HLJ Sustentação",
+    subtitle: "Evolução e Suporte",
+    description: "Um time de elite cuidando do seu sistema. Evoluções constantes, segurança e suporte técnico para você focar no lucro.",
+    price: "Mensalidades Flexíveis",
     features: [
-      "Pack Completo de +50 Prompts",
-      "Acesso à Masterclass Pro (Vídeo)",
-      "Mapas Mentais de Estratégias",
-      "Módulo de Vendas por Conteúdo",
-      "Acesso e Atualizações Vitalícias"
+      "Monitoramento 24/7",
+      "Backup Diário e Segurança",
+      "Novas Funcionalidades todo Mês",
+      "Atendimento Prioritário VIP",
+      "Consultoria de Processos"
     ],
-    icon: <Rocket className="h-8 w-8 text-primary" />,
+    icon: <ShieldCheck className="h-8 w-8 text-primary" />,
     popular: false,
     gradient: "from-primary/30 to-transparent"
   }
+];
+
+const cases = [
+  {
+    title: "Isabel Cunha RH",
+    category: "Sistema de Gestão",
+    result: "Redução de 80% no tempo de triagem",
+    image: "/isabel-print.png",
+    link: "https://isabelcunharh.com.br"
+  },
+  {
+    title: "Dumar Móveis",
+    category: "Vitrine Digital",
+    result: "Aumento real em leads de luxo",
+    image: "/dumar-print.png",
+    link: "https://dumarplanejados.com.br"
+  },
 ];
 
 const Shop = () => {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary overflow-x-hidden">
       <Helmet>
-        <title>HLJ DEV | Site&Sistema | Automações | Agentes de IA</title>
-        <meta name="description" content="Domine a Inteligência Artificial com nossos treinamentos e packs de prompts validados." />
+        <title>HLJ DEV | Soluções em Sites & Sistemas</title>
+        <meta name="description" content="Desenvolvimento de sistemas exclusivos, sites de alta performance e engenharia de software sob medida." />
       </Helmet>
 
       {/* Decorative Glow */}
@@ -76,7 +98,7 @@ const Shop = () => {
         <div className="max-w-6xl mx-auto px-4 h-24 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 transition-transform hover:scale-105">
             <ArrowLeft className="h-5 w-5 text-primary" />
-            <span className="font-bold text-sm uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">Voltar ao Site</span>
+            <span className="font-bold text-sm uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">Voltar</span>
           </Link>
           <div className="flex-1 flex justify-center">
             <img 
@@ -86,164 +108,162 @@ const Shop = () => {
             />
           </div>
           <div className="w-[120px] invisible sm:visible flex justify-end">
-            {/* Espaço reservado para equilíbrio visual */}
+            <Button variant="ghost" className="text-xs font-black uppercase tracking-widest" asChild>
+              <a href="https://wa.me/5548991013293" target="_blank">Falar com Consultor</a>
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="relative z-10 pt-28 pb-16">
         {/* Hero Section */}
-        <div className="max-w-4xl mx-auto px-4 text-center mb-10">
+        <div className="max-w-4xl mx-auto px-4 text-center mb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-6 border border-primary/20">
-              Acesso Imediato • Checkout Seguro
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold tracking-tight mb-2 leading-tight">
-              A Máquina de Resultados.<br/>
-              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent italic">Domine o ChatGPT e Gemini.</span>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 leading-none uppercase">
+              Seu Negócio merece <br/>
+              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent italic">Tecnologia sob Medida.</span>
             </h1>
+            <p className="text-muted-foreground text-lg font-medium max-w-2xl mx-auto leading-relaxed">
+              Desenvolvemos sistemas que resolvem gargalos operacionais e sites que posicionam sua marca como autoridade absoluta.
+            </p>
           </motion.div>
         </div>
 
-        {/* Products Grid */}
-        <div id="products" className="max-w-6xl mx-auto px-4">
+        {/* Solutions Grid */}
+        <div className="max-w-6xl mx-auto px-4 mb-32">
           <div className="grid md:grid-cols-3 gap-8">
-            {products.map((product, i) => (
+            {solutions.map((item, i) => (
               <motion.div
-                key={product.id}
+                key={item.id}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className={`relative group bg-card border ${product.popular ? 'border-primary shadow-[0_0_30px_rgba(20,255,20,0.1)]' : 'border-border/60'} rounded-2xl p-5 flex flex-col h-full overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-1`}
+                className={`relative group bg-card border ${item.popular ? 'border-primary shadow-[0_0_30px_rgba(20,255,20,0.1)]' : 'border-border/60'} rounded-3xl p-8 flex flex-col h-full overflow-hidden hover:border-primary/40 transition-all duration-300 hover:-translate-y-1`}
               >
-                {product.popular && (
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1 rounded-bl-lg">
-                    <Star className="h-3 w-3 fill-current" /> Mais Vendido
+                {item.popular && (
+                  <div className="absolute top-0 right-0 bg-primary text-black text-[9px] font-black uppercase tracking-widest px-4 py-1.5 flex items-center gap-1 rounded-bl-xl">
+                    <Star className="h-3 w-3 fill-current" /> Alta Demanda
                   </div>
                 )}
 
-                <div className={`absolute inset-0 bg-gradient-to-b ${product.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
                 <div className="relative z-10 flex-grow">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {product.icon}
+                  <div className="h-14 w-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 group-hover:bg-primary/10 group-hover:border-primary/20 transition-all duration-300">
+                    {item.icon}
                   </div>
 
-                  <div className="mb-2">
-                    <h3 className="text-lg font-bold leading-tight mb-1 group-hover:text-primary transition-colors">{product.title}</h3>
-                    <p className="text-[9px] font-bold text-primary uppercase tracking-widest opacity-80">{product.subtitle}</p>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-black leading-none mb-2 group-hover:text-primary transition-colors uppercase tracking-tight">{item.title}</h3>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-80">{item.subtitle}</p>
                   </div>
 
-                  <p className="text-muted-foreground text-[13px] leading-tight mb-3 min-h-[36px]">
-                    {product.description}
+                  <p className="text-muted-foreground text-[14px] leading-relaxed mb-6 font-medium">
+                    {item.description}
                   </p>
 
-                  <ul className="space-y-2 mb-4 border-t border-border/40 pt-3 mt-auto">
-                    {product.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-[12px] font-medium">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary/70 shrink-0 mt-0.5" />
-                        <span className="text-muted-foreground group-hover:text-foreground transition-colors">{feature}</span>
+                  <ul className="space-y-3 mb-8 border-t border-border/40 pt-6">
+                    {item.features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-3 text-xs font-bold">
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-zinc-400 group-hover:text-white transition-colors">{feature}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="relative z-10 border-t border-border/40 pt-3 mt-auto">
-                  <div className="mb-3">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Investimento</span>
-                    <div className="flex items-end gap-1">
-                      <span className="text-xs font-bold text-primary mb-0.5">R$</span>
-                      <span className="text-2xl font-black text-foreground">{product.price.split(',')[0]}</span>
-                      <span className="text-[11px] font-bold text-muted-foreground mb-0.5">,{product.price.split(',')[1]}</span>
-                    </div>
-                  </div>
-
-                  <Button className="w-full h-10 text-[14px] font-bold group bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20" asChild>
-                    <a href="https://kiwify.com.br" target="_blank" rel="noopener noreferrer">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Garantar Acesso
+                <div className="relative z-10 pt-6 border-t border-border/40 mt-auto">
+                  <Button className="w-full h-14 text-xs font-black uppercase tracking-widest group bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/20 rounded-2xl" asChild>
+                    <a href="https://wa.me/5548991013293" target="_blank" rel="noopener noreferrer">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Solicitar Orçamento
                     </a>
                   </Button>
-                  
-                  <div className="mt-2 flex items-center justify-center gap-1 text-[8px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">
-                    <Zap className="h-2.5 w-2.5" /> Acesso Imediato VIP
-                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
         </div>
 
-        {/* FAQ - Quick assurance */}
-        <div className="max-w-2xl mx-auto px-4 mt-32 text-center">
-            <h2 className="text-2xl font-bold mb-4">Dúvidas Frequentes</h2>
-            <div className="grid gap-4 text-left">
-                <div className="p-6 bg-secondary/20 rounded-2xl border border-border/40">
-                    <h3 className="font-bold text-primary mb-2 text-sm uppercase tracking-wide">Como recebo o acesso?</h3>
-                    <p className="text-sm text-muted-foreground">Após a confirmação do pagamento pela Kiwify, você receberá automaticamente o link de acesso em seu e-mail cadastrado.</p>
-                </div>
-                <div className="p-6 bg-secondary/20 rounded-2xl border border-border/40">
-                    <h3 className="font-bold text-primary mb-2 text-sm uppercase tracking-wide">Preciso ser programador?</h3>
-                    <p className="text-sm text-muted-foreground">Não. Nossos cursos e prompts são desenhados para usuários comuns e empresários que desejam usar a I.A. sem precisar escrever uma única linha de código complexo.</p>
-                </div>
+        {/* Cases Section */}
+        <div className="bg-zinc-950/40 border-y border-zinc-900 py-32">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
+              <div className="max-w-xl">
+                <span className="text-primary text-[10px] font-black uppercase tracking-widest mb-4 block">Portfolio Selecionado</span>
+                <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-none">Cases que entregaram <br className="hidden md:block" /><span className="text-primary italic">Resultados Reais.</span></h2>
+              </div>
+              <Button variant="outline" className="border-zinc-800 text-xs font-black uppercase tracking-widest h-12 rounded-xl" asChild>
+                <Link to="/#cases">Ver Todos os Projetos</Link>
+              </Button>
             </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {cases.map((caseItem, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative aspect-video rounded-3xl overflow-hidden border border-zinc-800 mb-6 bg-zinc-900">
+                    <img 
+                      src={caseItem.image} 
+                      alt={caseItem.title} 
+                      className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0 opacity-40 group-hover:opacity-100" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                    <a href={caseItem.link} target="_blank" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                      <ExternalLink size={16} />
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-primary text-[10px] font-black uppercase tracking-widest mb-1 block">{caseItem.category}</span>
+                    <h4 className="text-xl font-black text-white uppercase tracking-tight mb-2">{caseItem.title}</h4>
+                    <p className="text-zinc-500 text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+                      <Zap size={12} className="text-primary" /> {caseItem.result}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="max-w-4xl mx-auto px-4 mt-32">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-black uppercase tracking-tighter">Perguntas Comuns</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-8 bg-zinc-900/30 rounded-3xl border border-zinc-800">
+              <h3 className="font-black text-primary mb-3 text-xs uppercase tracking-widest">O sistema será meu?</h3>
+              <p className="text-sm text-zinc-400 font-medium leading-relaxed">Sim. Após a entrega final e quitação, o código-fonte e os direitos de uso do software são transferidos integralmente para sua empresa.</p>
+            </div>
+            <div className="p-8 bg-zinc-900/30 rounded-3xl border border-zinc-800">
+              <h3 className="font-black text-primary mb-3 text-xs uppercase tracking-widest">Quanto tempo demora?</h3>
+              <p className="text-sm text-zinc-400 font-medium leading-relaxed">Sites institucionais costumam levar de 10 a 20 dias. Sistemas personalizados dependem da complexidade, variando de 4 a 12 semanas.</p>
+            </div>
+          </div>
         </div>
       </main>
 
+      {/* Footer (Reutilizado do Index para consistência) */}
       <footer className="w-full relative border-t border-primary/20 bg-secondary/10 mt-20">
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent shadow-[0_0_15px_rgba(20,255,20,0.5)]"></div>
-        
-        <div className="max-w-6xl mx-auto px-4 pb-16 pt-8 grid grid-cols-1 md:grid-cols-4 gap-12 text-sm text-muted-foreground items-start">
-          {/* Brand Col */}
-          <div className="md:col-span-2 flex flex-col items-start justify-start">
-            <div className="flex flex-col items-center w-fit">
-              <div className="flex items-center transition-transform hover:scale-105 origin-center cursor-pointer -mt-8" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <img src="/logo-hljdev-removebg-preview.png" alt="HLJ DEV" className="h-56 object-contain brightness-0 invert" />
-              </div>
-              <div className="flex items-center gap-4 -mt-12">
-                <a href="https://instagram.com/ohenriquejunqueira" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-background flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-all border border-border/40 hover:border-primary/50 shadow-sm hover:shadow-[0_0_15px_rgba(20,255,20,0.2)]">
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a href="#" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-background flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-all border border-border/40 hover:border-primary/50 shadow-sm hover:shadow-[0_0_15px_rgba(20,255,20,0.2)]">
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Links Col 1 */}
-          <div className="space-y-4 pt-8">
-            <h4 className="font-bold text-foreground text-base tracking-wide uppercase opacity-80">Soluções & Ferramentas de IA</h4>
-            <nav className="flex flex-col gap-3 font-medium">
-              <Link to="/" className="hover:text-primary transition-colors hover:translate-x-1 w-fit duration-300">Soluções Corporativas</Link>
-              <a href="#products" className="hover:text-primary transition-colors hover:translate-x-1 w-fit duration-300">Nossos Produtos de IA</a>
-            </nav>
-          </div>
-
-          {/* Links Col 2 */}
-          <div className="space-y-4 pt-8">
-            <h4 className="font-bold text-foreground text-base tracking-wide uppercase opacity-80">Suporte & Cliente</h4>
-            <nav className="flex flex-col gap-3 font-medium">
-              <a href="https://wa.me/5548991013293" className="hover:text-primary transition-colors hover:translate-x-1 w-fit duration-300" target="_blank" rel="noopener noreferrer">WhatsApp de Atendimento</a>
-            </nav>
+        <div className="max-w-6xl mx-auto px-4 py-16 flex flex-col items-center text-center">
+          <img src="/logo-hljdev-removebg-preview.png" alt="HLJ DEV" className="h-24 object-contain brightness-0 invert mb-8" />
+          <p className="text-zinc-500 text-sm max-w-md mb-8">Elevando o padrão tecnológico de empresas que buscam escala e eficiência através de engenharia de software de elite.</p>
+          <div className="flex gap-4">
+             <a href="https://instagram.com/ohenriquejunqueira" target="_blank" className="text-zinc-400 hover:text-primary transition-colors"><Instagram /></a>
+             <a href="#" target="_blank" className="text-zinc-400 hover:text-primary transition-colors"><Linkedin /></a>
           </div>
         </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-border/40 bg-background/50 backdrop-blur-md">
-          <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-2 font-medium text-muted-foreground uppercase opacity-75 tracking-wider">
-              <span>© {new Date().getFullYear()} HLJ DEV • Engenharia de Software</span>
-            </div>
-            <div className="flex items-center gap-2 bg-secondary/80 px-4 py-2 rounded-full border border-border/50 shadow-inner">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(20,255,20,0.8)] animate-pulse" />
-              <span className="font-mono text-primary font-bold tracking-widest uppercase">Sistemas em Operação</span>
-            </div>
-          </div>
+        <div className="border-t border-border/40 py-6 text-center text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+          © {new Date().getFullYear()} HLJ DEV • Todos os Direitos Reservados
         </div>
       </footer>
     </div>

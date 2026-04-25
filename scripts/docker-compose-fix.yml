@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # --- DATABASE ---
+  db:
+    container_name: supabase-db
+    image: supabase/postgres:15.1.1.78
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./volumes/db/data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - hlj-network
+
+  # --- REDIS (For Evolution API) ---
+  redis:
+    image: redis:7-alpine
+    container_name: hlj-redis
+    restart: always
+    networks:
+      - hlj-network
+
+  # --- N8N ---
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: hlj-n8n
+    ports:
+      - '3012:5678'
+    environment:
+      - N8N_HOST=n8n.hljdev.com.br
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.hljdev.com.br/
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - SUPABASE_HOST=db.hljdev.com.br
+      - SUPABASE_PORT=5432
+      - SUPABASE_DB=postgres
+      - SUPABASE_USER=postgres
+      - SUPABASE_PASS=${POSTGRES_PASSWORD}
+      - WHATSAPP_API_URL=http://hlj-evolution:8080
+      - WHATSAPP_INSTANCE=hlj-principal
+      - SEU_WHATSAPP=5548991013293
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    restart: always
+    networks:
+      - hlj-network
+
+  # --- EVOLUTION API ---
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: hlj-evolution
+    depends_on:
+      - redis
+    ports:
+      - '3013:8080'
+    environment:
+      - SERVER_URL=https://evolution.hljdev.com.br
+      - SERVER_PORT=8080
+      - CORS_ORIGIN=*
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=hlj_ev_apikey_2026_secure_key
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://hlj-redis:6379/1
+      - CACHE_REDIS_PREFIX_KEY=evocache
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://hlj-redis:6379/2
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_CLIENT=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/hlj_evolution_db?sslmode=disable
+    volumes:
+      - ./evolution_data:/evolution/instances
+    restart: always
+    networks:
+      - hlj-network
+
+  # --- SUPABASE AUTH ---
+  auth:
+    container_name: supabase-auth
+    image: supabase/gotrue:v2.161.0
+    depends_on:
+      - db
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: https://supabase.hljdev.com.br
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/postgres?sslmode=disable
+      GOTRUE_SITE_URL: https://hljdev.com.br
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+    networks:
+      - hlj-network
+    restart: unless-stopped
+
+  # --- SUPABASE REST (Postgrest) ---
+  rest:
+    container_name: supabase-rest
+    image: postgrest/postgrest:v11.1.0
+    depends_on:
+      - db
+    environment:
+      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - hlj-network
+    restart: unless-stopped
+
+  # --- KONG (API Gateway) ---
+  kong:
+    container_name: supabase-kong
+    image: kong:2.8.1
+    depends_on:
+      - auth
+      - rest
+    ports:
+      - '8000:8000'
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./volumes/api/kong.yml:/home/kong/kong.yml:ro
+    networks:
+      - hlj-network
+    restart: unless-stopped
+
+  # --- SUPABASE STUDIO (Dashboard) ---
+  studio:
+    container_name: supabase-studio
+    image: supabase/studio:2026.02.16-sha-26c615c
+    ports:
+      - '3015:3000'
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+    networks:
+      - hlj-network
+    restart: unless-stopped
+
+  meta:
+    container_name: supabase-meta
+    image: supabase/postgres-meta:v0.95.2
+    environment:
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - hlj-network
+
+networks:
+  hlj-network:
+    name: hlj-network
+    driver: bridge

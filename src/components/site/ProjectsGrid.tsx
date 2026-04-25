@@ -34,27 +34,16 @@ const defaultProjects: Project[] = [
     featuresRight: ["Carregamento Ultra-rápido (SEO Forte)"],
     techs: ["Design UI/UX", "Plataforma Otimizada"],
     liveDemo: "https://dumarplanejados.com.br",
-  },
-  {
-    title: "Portal Digital de Serviços (JK Construções)",
-    description: "Construtora com forte atuação offline precisava de credibilidade instantânea para empresas e investidores avaliarem seu portfólio de grandes obras e solicitarem orçamento.",
-    image: "/jk-print.png",
-    status: "Operação Rápida",
-    featuresLeft: ["Catálogo de Obras Concluídas", "Botão de Ação Direto para Diretoria"],
-    featuresRight: ["Arquitetura de Conversão B2B"],
-    techs: ["Landing Page B2B", "Alta Conversão"],
-    liveDemo: "https://jkconstrucoes.com.br",
-  },
-  
+  }
 ];
 
 export function ProjectsGrid({ projects = defaultProjects }: { projects?: Project[] }) {
 
   return (
-    <section id="projects" className="max-w-5xl mx-auto px-4 py-16 scroll-mt-24">
+    <section id="cases" className="max-w-5xl mx-auto px-4 py-16 scroll-mt-24">
       <motion.header className="mb-8" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-        <h2 className="text-2xl md:text-3xl font-bold">Cases de Sucessos</h2>
-        <p className="text-muted-foreground mt-1">Resultados entregues para clientes reais.</p>
+        <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter italic">Cases de Sucesso</h2>
+        <p className="text-muted-foreground mt-1 font-medium">Resultados entregues para clientes reais.</p>
       </motion.header>
       <div className="grid gap-5 sm:gap-6 grid-cols-1 sm:grid-cols-2">
         {projects.map((p, i) => (

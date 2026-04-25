@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { Bot, Loader2 } from "lucide-react";
 
-export type Lead = { id: string; nome: string; email: string; whatsapp: string; interesse: string; mensagem: string; created_at: string };
+export type Lead = { id: string; nome: string; email: string; whatsapp: string; endereco: string; interesse: string; mensagem: string; created_at: string };
 
 export function LeadForm() {
   const [nome, setNome] = useState("");
@@ -14,6 +14,7 @@ export function LeadForm() {
   const [whatsapp, setWhatsapp] = useState("");
   const [interesse, setInteresse] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [endereco, setEndereco] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -22,27 +23,34 @@ export function LeadForm() {
 
     try {
       const id = crypto.randomUUID();
-      const lead: Lead = { id, nome, email, whatsapp, interesse, mensagem, created_at: new Date().toISOString() };
+      const lead: Lead & { endereco: string } = { id, nome, email, whatsapp, endereco, interesse, mensagem, created_at: new Date().toISOString() };
       
       // Salva no banco local temporário para a área administrativa do site
       const current = JSON.parse(localStorage.getItem("leads") || "[]");
       localStorage.setItem("leads", JSON.stringify([lead, ...current]));
 
-      // Integração n8n: Dispara para a sua VPS (Mude a URL no .env ou direto no código)
-      const WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "https://n8n.suavps.com/webhook/lead-captado";
+      // ✅ Webhook ATIVADO - Envia lead para N8N
+      const WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
       
-      // Em um ambiente de produção real com a API ativa, descomente a linha abaixo:
-      // await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(lead) });
+      const webhookResponse = await fetch(WEBHOOK_URL, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(lead) 
+      });
+
+      if (!webhookResponse.ok) {
+        console.error("❌ Webhook failed:", webhookResponse.status);
+        throw new Error("Falha ao enviar lead para servidor");
+      }
       
-      // Simulando o delay do webhook
-      await new Promise(resolve => setTimeout(resolve, 800));
+      console.log("✅ Lead enviado para N8N com sucesso!");
 
       toast({ 
         title: "Escala Iniciada!", 
         description: "Nossos Protocolos já registraram seu contato. Faremos uma triagem técnica e nosso agente falará com você no WhatsApp." 
       });
       
-      setNome(""); setEmail(""); setWhatsapp(""); setInteresse(""); setMensagem("");
+      setNome(""); setEmail(""); setWhatsapp(""); setEndereco(""); setInteresse(""); setMensagem("");
     } catch (error) {
       toast({ title: "Ops!", description: "Houve um problema ao enviar o contato.", variant: "destructive" });
     } finally {
@@ -77,19 +85,21 @@ export function LeadForm() {
             
             <div className="grid sm:grid-cols-2 gap-4">
               <Input type="tel" placeholder="WhatsApp (DDD + N°)" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="h-12 bg-secondary/50 focus:bg-background transition-colors" />
-              <Select value={interesse} onValueChange={setInteresse} required>
-                <SelectTrigger className="h-12 bg-secondary/50 focus:bg-background transition-colors font-medium">
-                  <SelectValue placeholder="Onde está seu maior gargalo?" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="automacao">Quero um Agente de I.A (Atendimento/Venda)</SelectItem>
-                  <SelectItem value="sistema">Preciso de um Sistema/Aplicativo Web Exclusivo</SelectItem>
-                  <SelectItem value="mentoria">Quero uma consultoria de estrutura n8n</SelectItem>
-                  <SelectItem value="produtos">Busco ferramentas prontas (Prompts/Templates)</SelectItem>
-                  <SelectItem value="outro">Tenho outra ideia e quero alinhar</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input placeholder="Sua Cidade/Estado (ex: São Paulo, SP)" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="h-12 bg-secondary/50 focus:bg-background transition-colors" />
             </div>
+
+            <Select value={interesse} onValueChange={setInteresse} required>
+              <SelectTrigger className="h-12 bg-secondary/50 focus:bg-background transition-colors font-medium">
+                <SelectValue placeholder="Onde está seu maior gargalo?" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="automacao">Quero um Agente de I.A (Atendimento/Venda)</SelectItem>
+                <SelectItem value="sistema">Preciso de um Sistema/Aplicativo Web Exclusivo</SelectItem>
+                <SelectItem value="mentoria">Quero uma consultoria de estrutura n8n</SelectItem>
+                <SelectItem value="produtos">Busco ferramentas prontas (Prompts/Templates)</SelectItem>
+                <SelectItem value="outro">Tenho outra ideia e quero alinhar</SelectItem>
+              </SelectContent>
+            </Select>
             
             <Textarea placeholder="Descreva brevemente como a sua operação funciona hoje e o que você gostaria de colocar no automático..." value={mensagem} onChange={(e) => setMensagem(e.target.value)} required rows={4} className="bg-secondary/50 focus:bg-background transition-colors resize-none" />
             

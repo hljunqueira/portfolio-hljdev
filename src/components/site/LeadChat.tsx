@@ -12,19 +12,19 @@ type Message = {
   text: string;
 };
 
-type Step = "nome" | "email" | "whatsapp" | "interesse" | "mensagem" | "done";
+type Step = "nome" | "email" | "whatsapp" | "cep" | "endereco" | "interesse" | "mensagem" | "done";
 
 const GARGALOS = [
-  "Agente de I.A (Venda/Suporte)",
-  "Sistema Web/SaaS Exclusivo",
-  "Mentoria Avançada em n8n",
-  "Aceleração via Prompts",
-  "Tenho outra ideia (Alinhar)"
+  "Site Institucional de Elite",
+  "Sistema Web Personalizado",
+  "Automação de Processos (n8n)",
+  "Suporte e Evolução VIP",
+  "Consultoria de Tecnologia"
 ];
 
 export function LeadChat() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: "msg_init", sender: "bot", text: "Olá! Pronto para ativar sua máquina de vendas e escalar sua operação? Para começarmos a configuração, como posso te chamar?" }
+    { id: "msg_init", sender: "bot", text: "Olá! Pronto para elevar o nível do seu negócio com tecnologia de elite? Para iniciarmos a viabilidade do seu projeto, como posso te chamar?" }
   ]);
   const [step, setStep] = useState<Step>("nome");
   const [inputValue, setInputValue] = useState("");
@@ -35,19 +35,24 @@ export function LeadChat() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    // Só faz scroll se houver mais de 1 mensagem (evita scroll no carregamento inicial)
-    if (messages.length > 1) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current;
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: "smooth"
+      });
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Pequeno delay para esperar o DOM atualizar com a nova mensagem
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
   }, [messages, isTyping]);
 
   const handleRestart = () => {
     setMessages([
-      { id: crypto.randomUUID(), sender: "bot", text: "Olá! Pronto para ativar sua máquina de vendas e escalar sua operação? Para começarmos a configuração, como posso te chamar?" }
+      { id: crypto.randomUUID(), sender: "bot", text: "Olá! Pronto para elevar o nível do seu negócio com tecnologia de elite? Para iniciarmos a viabilidade do seu projeto, como posso te chamar?" }
     ]);
     setStep("nome");
     setLeadData({});
@@ -77,17 +82,83 @@ export function LeadChat() {
       setStep("email");
       addBotMessage(`Muito prazer, ${textToSend.split(" ")[0]}. Qual é o seu e-mail corporativo ou principal?`);
     } else if (step === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(textToSend)) {
+        addBotMessage("Ops! Esse e-mail parece inválido. Poderia digitar novamente?");
+        return;
+      }
       setLeadData({ ...leadData, email: textToSend });
       setStep("whatsapp");
       addBotMessage("Excelente. E o seu WhatsApp (com DDD) para um contato mais ágil?");
     } else if (step === "whatsapp") {
+      const phoneClean = textToSend.replace(/\D/g, "");
+      if (phoneClean.length < 10) {
+        addBotMessage("Esse número de WhatsApp parece incompleto. Poderia digitar com o DDD?");
+        return;
+      }
       setLeadData({ ...leadData, whatsapp: textToSend });
+      setStep("cep");
+      addBotMessage("Entendido. Agora, para localizarmos sua região, qual o seu CEP?");
+    } else if (step === "cep") {
+      const cep = textToSend.replace(/\D/g, "");
+      if (cep.length !== 8) {
+        addBotMessage("CEP inválido. Por favor, digite os 8 números.");
+        return;
+      }
+      
+      setIsTyping(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        setIsTyping(false);
+        
+        if (data.erro) {
+          addBotMessage("Não encontrei esse CEP. Pode digitar novamente?");
+          return;
+        }
+        
+        if (!data.logradouro) {
+          // CEP Único da cidade
+          setLeadData({ ...leadData, endereco: `${data.localidade}, ${data.uf}` });
+          setStep("endereco");
+          addBotMessage(`Encontrei sua cidade: ${data.localidade}/${data.uf}. Mas esse CEP é geral. Poderia digitar sua RUA, NÚMERO e BAIRRO?`);
+        } else {
+          const enderecoEncontrado = `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+          setLeadData({ ...leadData, endereco: enderecoEncontrado });
+          setStep("endereco");
+          addBotMessage(`Localizei: ${enderecoEncontrado}. Qual o NÚMERO e COMPLEMENTO (se houver)?`);
+        }
+      } catch (err) {
+        setIsTyping(false);
+        addBotMessage("Tive um problema ao buscar o CEP, mas podemos continuar. Digite seu endereço completo:");
+        setStep("endereco");
+      }
+    } else if (step === "endereco") {
+      const enderecoCompleto = leadData.endereco && !leadData.endereco.includes("nº") 
+        ? `${leadData.endereco}, nº ${textToSend}` 
+        : textToSend;
+      
+      setLeadData({ ...leadData, endereco: enderecoCompleto });
       setStep("interesse");
-      addBotMessage("Entendido. Onde está o seu maior gargalo ou foco de automação hoje?");
+      addBotMessage("Perfeito! Anotado. Agora, onde está o seu maior gargalo ou foco de tecnologia hoje?");
     } else if (step === "interesse") {
       setLeadData({ ...leadData, interesse: textToSend });
       setStep("mensagem");
-      addBotMessage("Perfeito. Para finalizarmos a triagem, descreva brevemente como sua operação funciona hoje e o que gostaria de colocar no automático...");
+      let nextMsg = "Perfeito. Para finalizarmos a triagem, descreva brevemente como sua operação funciona hoje e o que gostaria de melhorar...";
+      
+      if (textToSend.includes("Site")) {
+        nextMsg = "Perfeito. Para finalizarmos a triagem, descreva brevemente o objetivo desse novo site e qual o perfil do público que você quer atingir...";
+      } else if (textToSend.includes("Sistema")) {
+        nextMsg = "Perfeito. Para finalizarmos a triagem, descreva brevemente qual o maior problema que esse sistema deve resolver e quem seriam os usuários principais...";
+      } else if (textToSend.includes("Automação")) {
+        nextMsg = "Perfeito. Para finalizarmos a triagem, descreva qual processo repetitivo hoje mais consome tempo da sua equipe e você gostaria de automatizar...";
+      } else if (textToSend.includes("Suporte")) {
+        nextMsg = "Perfeito. Para finalizarmos a triagem, conte um pouco sobre sua estrutura tecnológica atual e quais os principais desafios que você enfrenta hoje...";
+      } else if (textToSend.includes("Consultoria")) {
+        nextMsg = "Perfeito. Para finalizarmos a triagem, descreva brevemente o cenário atual da sua empresa e qual o seu principal objetivo tecnológico para os próximos meses...";
+      }
+      
+      addBotMessage(nextMsg);
     } else if (step === "mensagem") {
       setLeadData({ ...leadData, mensagem: textToSend });
       setStep("done");
@@ -100,6 +171,7 @@ export function LeadChat() {
         nome: leadData.nome!,
         email: leadData.email!,
         whatsapp: leadData.whatsapp!,
+        endereco: leadData.endereco!,
         interesse: leadData.interesse!,
         mensagem: textToSend,
         created_at: new Date().toISOString()
@@ -109,16 +181,31 @@ export function LeadChat() {
         const current = JSON.parse(localStorage.getItem("leads") || "[]");
         localStorage.setItem("leads", JSON.stringify([finalLeadData, ...current]));
 
-        const WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "https://n8n.suavps.com/webhook/lead-captado";
-        // await fetch(WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(finalLeadData) });
+        // ✅ Webhook ATIVADO - Envia lead para N8N
+        const WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
+        
+        const webhookResponse = await fetch(WEBHOOK_URL, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify(finalLeadData) 
+        });
+
+        if (!webhookResponse.ok) {
+          console.error("❌ Webhook failed:", webhookResponse.status);
+        } else {
+          console.log("✅ Lead enviado para N8N com sucesso!");
+        }
 
         setTimeout(() => {
           setIsTyping(false);
-          setMessages((prev) => [...prev, { id: crypto.randomUUID(), sender: "bot", text: "✅ Configuração iniciada! Seus dados foram transferidos para nossa engenharia. Um de nossos especialistas te chamará no WhatsApp em até 1 hora para ativar seu sistema." }]);
+          setMessages((prev) => [...prev, { id: crypto.randomUUID(), sender: "bot", text: "✅ Solicitação recebida! Seus dados foram transferidos para nossa engenharia. Um de nossos especialistas analisará seu perfil e te chamará no WhatsApp em até 1 hora para discutirmos seu novo sistema." }]);
           toast({ title: "Sistema Ativado!", description: "Sua solicitação está na fila de processamento." });
         }, 1500);
       } catch (err) {
+        console.error("Erro ao enviar lead:", err);
         setIsTyping(false);
+        setMessages((prev) => [...prev, { id: crypto.randomUUID(), sender: "bot", text: "⚠️ Houve um problema técnico. Por favor, tente novamente ou nos chame no WhatsApp diretamente." }]);
+        toast({ title: "Erro", description: "Não foi possível processar sua solicitação. Tente novamente.", variant: "destructive" });
       }
     }
   };
@@ -129,8 +216,8 @@ export function LeadChat() {
         
         {/* Left Side: Context */}
         <div className="space-y-6">
-          <h2 id="lead-title" className="text-3xl md:text-5xl font-extrabold tracking-tight">
-            Fale conosco <br/><span className="text-primary italic">pelo Chat</span>
+          <h2 id="lead-title" className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase leading-none">
+            Inicie seu <br/><span className="text-primary italic">Projeto de Elite</span>
           </h2>
         </div>
 
@@ -237,7 +324,14 @@ export function LeadChat() {
               <Input 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={step === "done" ? "Triagem finalizada" : step === "interesse" ? "Selecione uma opção acima..." : "Digite sua mensagem..."}
+                placeholder={
+                  step === "done" ? "Triagem finalizada" : 
+                  step === "interesse" ? "Selecione uma opção acima..." : 
+                  step === "cep" ? "Digite seu CEP (apenas números)..." :
+                  step === "endereco" ? "Digite número / complemento / endereço..." :
+                  step === "whatsapp" ? "Digite seu WhatsApp com DDD..." :
+                  "Digite sua mensagem..."
+                }
                 disabled={step === "done" || step === "interesse" || isTyping}
                 className="flex-1 bg-secondary/30 border-none focus-visible:ring-1 focus-visible:ring-primary h-12 rounded-xl"
               />

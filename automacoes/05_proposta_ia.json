@@ -1,0 +1,315 @@
+{
+  "name": "HLJ Proposta IA Automática",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "proposta-ia",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-proposta",
+      "name": "Webhook — Trigger Proposta IA",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "hlj-proposta-ia"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/leads?id=eq.{{ $json.lead_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-buscar-lead",
+      "name": "Supabase — Buscar Dados Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama-3.3-70b-versatile"
+            },
+            {
+              "name": "messages",
+              "value": "={{ JSON.stringify([{ role: 'system', content: 'Voce e especialista em propostas de automacao e IA.' }, { role: 'user', content: 'Crie proposta para: ' + $input.first().json[0]?.nome + ' | Interesse: ' + $input.first().json[0]?.interesse + ' | Score: ' + $input.first().json[0]?.score + '. Inclua: saudacao, diagnostico, solucao, valores (Site Elite 4500, Sistema Web 8500, Automacao 3500), prazo 15-30 dias, garantia 30 dias, CTA. Max 800 chars.' }]) }}"
+            },
+            {
+              "name": "temperature",
+              "value": 0.7
+            },
+            {
+              "name": "max_tokens",
+              "value": 1000
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-groq-proposta",
+      "name": "Groq — Gerar Proposta IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const proposta = $('Groq — Gerar Proposta IA').first().json.choices[0].message.content;\nconst lead = $('Supabase — Buscar Dados Lead').first().json[0];\nconst numero = lead.telefone ? '55' + lead.telefone.replace(/\\D/g, '') : null;\n\nreturn [{ json: { lead_id: lead.id, lead_nome: lead.nome, lead_telefone: numero, proposta_texto: proposta, score: lead.score } }];"
+      },
+      "id": "node-formatar",
+      "name": "Formatar Proposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_HOST }}/rest/v1/propostas",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzc1NTI4NDk5LCJleHAiOjIwOTA4ODg0OTl9.3fu-B2l3sM9EvkOcNXLSb4UAWvQIbAFyec7gnQ1Ax5c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}"
+            },
+            {
+              "name": "conteudo",
+              "value": "={{ $json.proposta_texto }}"
+            },
+            {
+              "name": "status",
+              "value": "enviada"
+            },
+            {
+              "name": "criada_por",
+              "value": "ia_groq"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-salvar-proposta",
+      "name": "Supabase — Salvar Proposta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_API_URL }}/message/sendText/{{ $env.WHATSAPP_INSTANCE }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.WHATSAPP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $env.SEU_WHATSAPP }}"
+            },
+            {
+              "name": "text",
+              "value": "=🤖 PROPOSTA IA ENVIADA\nLead: {{ $json.lead_nome }}\nScore: {{ $json.score }}pts\nWhatsApp: {{ $json.lead_telefone || 'Nao informado' }}\n✅ Proposta enviada automaticamente!"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-notificar",
+      "name": "WhatsApp — Notificar Henrique",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true, \"message\": \"Proposta gerada e enviada\" }",
+        "options": {}
+      },
+      "id": "node-resposta",
+      "name": "Resposta OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1800,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook — Trigger Proposta IA": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Buscar Dados Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase — Buscar Dados Lead": {
+      "main": [
+        [
+          {
+            "node": "Groq — Gerar Proposta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Gerar Proposta IA": {
+      "main": [
+        [
+          {
+            "node": "Formatar Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Proposta": {
+      "main": [
+        [
+          {
+            "node": "Supabase — Salvar Proposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase — Salvar Proposta": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp — Notificar Henrique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp — Notificar Henrique": {
+      "main": [
+        [
+          {
+            "node": "Resposta OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "HLJ DEV"
+    },
+    {
+      "name": "IA"
+    },
+    {
+      "name": "Propostas"
+    }
+  ],
+  "triggerCount": 1,
+  "versionId": "05-hlj-proposta-ia"
+}

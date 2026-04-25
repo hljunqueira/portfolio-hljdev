@@ -1,0 +1,34 @@
+{
+    email henriquelinharesjunqueira@gmail.com
+}
+
+# --- CONFIGURACOES HLJ DEV ---
+admin.hljdev.com.br {
+    redir https://hljdev.com.br/admin
+}
+
+n8n.hljdev.com.br {
+    reverse_proxy localhost:3012
+}
+
+supabase.hljdev.com.br {
+    # API endpoints
+    handle /auth/* {
+        reverse_proxy localhost:8000
+    }
+    handle /rest/* {
+        reverse_proxy localhost:8000
+    }
+    handle /pg_meta/* {
+        reverse_proxy localhost:8000
+    }
+    
+    # Dashboard Studio
+    handle {
+        reverse_proxy localhost:3015
+    }
+}
+
+evolution.hljdev.com.br {
+    reverse_proxy localhost:3013
+}

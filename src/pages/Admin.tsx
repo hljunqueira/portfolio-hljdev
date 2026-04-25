@@ -7,15 +7,13 @@ import {
   Users,
   Settings,
   LogOut,
-  Terminal,
-  FileText,
-  ShoppingCart,
+  Map,
   Briefcase,
-  Package,
   BarChart2,
   Calendar,
   ChevronLeft,
   Menu,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -23,10 +21,8 @@ import { toast } from "@/hooks/use-toast";
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/admin" },
   { icon: Users, label: "Pipeline", to: "/admin/pipeline" },
-  { icon: FileText, label: "Propostas IA", to: "/admin/propostas" },
-  { icon: ShoppingCart, label: "Vendas", to: "/admin/vendas" },
+  { icon: Map, label: "Campanhas Maps", to: "/admin/maps" },
   { icon: Briefcase, label: "Projetos", to: "/admin/projetos" },
-  { icon: Package, label: "Produtos Shop", to: "/admin/produtos" },
   { icon: BarChart2, label: "Analytics", to: "/admin/analytics" },
   { icon: Calendar, label: "Agenda", to: "/admin/tarefas" },
   { icon: Settings, label: "Config", to: "/admin/config" },
@@ -60,55 +56,54 @@ const Admin = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center font-mono">
-        <div className="text-primary animate-pulse flex items-center gap-2">
-          <Terminal className="h-5 w-5" />
-          CARREGANDO_SISTEMA...
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-primary animate-pulse flex items-center gap-3">
+          <ShieldCheck className="h-6 w-6" />
+          <span className="font-bold tracking-tighter uppercase">Autenticando...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-zinc-400 font-mono selection:bg-primary/20 selection:text-primary">
-      {/* CRT Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-      <div className="fixed inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
-
+    <div className="min-h-screen bg-black text-zinc-400 selection:bg-primary/20 selection:text-primary">
       <div className="flex min-h-screen relative z-10">
         {/* Sidebar */}
         <AnimatePresence initial={false}>
           <motion.aside
-            animate={{ width: collapsed ? 64 : 240 }}
+            animate={{ width: collapsed ? 70 : 260 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="hidden md:flex flex-col bg-black/60 border-r border-primary/15 backdrop-blur-md shrink-0 overflow-hidden"
+            className="hidden md:flex flex-col bg-zinc-950 border-r border-zinc-900 shrink-0 overflow-hidden"
           >
             {/* Logo */}
-            <div className="flex items-center gap-3 px-4 py-5 border-b border-primary/10">
+            <div className="flex items-center gap-3 px-6 py-8">
               <div
-                className="w-8 h-8 bg-primary/10 rounded border border-primary/30 flex items-center justify-center shrink-0 cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(20,255,20,0.3)]"
+                className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-lg shadow-primary/20"
                 onClick={() => navigate("/")}
               >
-                <Terminal className="w-4 h-4 text-primary" />
+                <ShieldCheck className="w-6 h-6 text-black" />
               </div>
               {!collapsed && (
-                <motion.span
+                <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="font-black text-primary tracking-tighter text-lg whitespace-nowrap"
+                  className="flex flex-col min-w-0"
                 >
-                  HLJ_ROOT
-                </motion.span>
+                  <span className="font-black text-white tracking-tighter text-xl uppercase leading-none">
+                    HLJ <span className="text-primary">DEV</span>
+                  </span>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Sistemas & IA</span>
+                </motion.div>
               )}
               <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="ml-auto text-zinc-600 hover:text-primary transition-colors shrink-0"
+                className="ml-auto text-zinc-600 hover:text-white transition-colors shrink-0"
               >
-                {collapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
               </button>
             </div>
 
             {/* Nav Items */}
-            <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
+            <nav className="flex-1 py-4 space-y-1.5 px-3 overflow-y-auto">
               {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
                 const isActive = to === "/admin"
                   ? location.pathname === "/admin"
@@ -117,61 +112,60 @@ const Admin = () => {
                   <NavLink
                     key={to}
                     to={to}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all group ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all group ${
                       isActive
-                        ? "bg-primary/10 text-primary border border-primary/20 shadow-[0_0_10px_rgba(20,255,20,0.08)]"
-                        : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5 border border-transparent"
+                        ? "bg-zinc-900 text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
                     }`}
                     title={collapsed ? label : undefined}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "group-hover:text-primary"} transition-colors`} />
                     {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+                    {isActive && !collapsed && (
+                      <motion.div layoutId="activeNav" className="ml-auto w-1 h-4 bg-primary rounded-full" />
+                    )}
                   </NavLink>
                 );
               })}
             </nav>
 
             {/* User footer */}
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="px-3 py-4 border-t border-primary/10"
-              >
-                <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-primary/5 border border-primary/10">
-                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-black text-xs uppercase shrink-0">
-                    {user?.email?.substring(0, 2)}
+            <div className="p-4 border-t border-zinc-900 mt-auto">
+              {!collapsed ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-900/50">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm uppercase shrink-0">
+                      {user?.email?.substring(0, 2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-zinc-300 truncate font-bold">{user?.email}</p>
+                      <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Administrador</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] text-primary/50 uppercase font-black">Admin</p>
-                    <p className="text-[10px] text-zinc-300 truncate lowercase">{user?.email}</p>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="w-full justify-start gap-3 text-zinc-500 hover:text-red-400 hover:bg-red-400/5 transition-all font-bold uppercase text-[10px] tracking-widest rounded-xl h-12"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Encerrar Sessão
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className="w-full justify-start gap-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 border border-transparent hover:border-red-400/20 transition-all font-bold uppercase text-[9px] tracking-widest h-8"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Sair
-                </Button>
-              </motion.div>
-            )}
-            {collapsed && (
-              <div className="px-2 py-4 border-t border-primary/10">
+              ) : (
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center p-2 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  className="w-full flex items-center justify-center h-12 rounded-xl text-zinc-600 hover:text-red-400 hover:bg-red-400/5 transition-all"
                   title="Sair"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-5 w-5" />
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </motion.aside>
         </AnimatePresence>
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto min-h-screen">
+        <main className="flex-1 overflow-y-auto min-h-screen bg-black">
           <Outlet context={{ user }} />
         </main>
       </div>
