@@ -110,54 +110,65 @@ const AdminConfig = () => {
   const generateQrCode = async () => {
     if (!sysConfig) return;
     setWaStatus('LOADING');
-    try {
-      // 1. Tentar obter o QR Code diretamente
-      const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
-        headers: { 'apikey': sysConfig.wa_api_key }
-      });
-      
-      if (res.status === 404) {
-        // 2. Se a instância não existe, vamos criá-la
-        const createRes = await fetch(`${sysConfig.wa_api_url}/instance/create`, {
-          method: 'POST',
-          headers: { 
-            'apikey': sysConfig.wa_api_key,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            instanceName: sysConfig.wa_instance_name,
-            token: sysConfig.wa_api_key,
-            qrcode: true
-          })
+      // Timeout de segurança de 20 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      try {
+        const res = await fetch(`${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`, {
+          headers: { 'apikey': sysConfig.wa_api_key },
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         
-        if (createRes.ok) {
-          // Tentar conectar novamente após criação
-          setTimeout(generateQrCode, 1500);
-          return;
+        if (res.status === 404) {
+          console.log("Instância não encontrada, tentando criar...");
+          const createRes = await fetch(`${sysConfig.wa_api_url}/instance/create`, {
+            method: 'POST',
+            headers: { 
+              'apikey': sysConfig.wa_api_key,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              instanceName: sysConfig.wa_instance_name,
+              token: sysConfig.wa_api_key,
+              qrcode: true
+            })
+          });
+          
+          if (createRes.ok) {
+            setTimeout(generateQrCode, 2000);
+            return;
+          }
         }
-      }
 
-      const data = await res.json();
-      console.log("Evolution API Connect Response:", JSON.stringify(data, null, 2));
+        const data = await res.json();
+        console.log("Evolution API Data Recieved:", JSON.stringify(data, null, 2));
 
-      if (data.code) {
-        // Garantir que o código tenha o prefixo de imagem base64
-        const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
-        setQrCode(qr);
-        setWaStatus('DISCONNECTED');
-        toast({ title: "QR Code Gerado!", description: "Escaneie para conectar." });
-      } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
-        setWaStatus('CONNECTED');
-        setQrCode(null);
-        toast({ title: "WhatsApp Conectado!" });
-      } else {
-        toast({ title: "Status: " + (data.status || "Desconectado") });
-        setWaStatus('DISCONNECTED');
+        if (data.code) {
+          const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
+          setQrCode(qr);
+          setWaStatus('DISCONNECTED');
+          toast({ title: "QR Code Pronto!", description: "Escaneie agora." });
+        } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
+          setWaStatus('CONNECTED');
+          setQrCode(null);
+          toast({ title: "WhatsApp Conectado!" });
+        } else {
+          console.log("Resposta sem código ou conexão:", data);
+          toast({ title: "Aguardando...", description: "A API ainda não gerou o código. Tente em instantes." });
+          setWaStatus('DISCONNECTED');
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          toast({ title: "Tempo Esgotado", description: "A Evolution API demorou muito para responder.", variant: "destructive" });
+        } else {
+          throw err;
+        }
       }
     } catch (e) {
       console.error("WA Error:", e);
-      toast({ title: "Erro na Evolution API", description: "Verifique se a URL e API Key no painel estão corretas.", variant: "destructive" });
+      toast({ title: "Erro na Conexão", description: "Não foi possível falar com a Evolution API.", variant: "destructive" });
       setWaStatus('DISCONNECTED');
     }
   };
