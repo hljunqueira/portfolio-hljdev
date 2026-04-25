@@ -72,14 +72,18 @@ const AdminTarefas = () => {
     setSaving(false);
   };
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   const deleteTask = async (id: string) => {
-    console.log("Tentando excluir nota:", id);
-    if (!id) {
-      toast({ title: "Erro", description: "ID da nota não encontrado", variant: "destructive" });
+    if (!id) return;
+
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      toast({ title: "Clique novamente para confirmar", description: "A nota será excluída permanentemente." });
+      // Reset after 3 seconds
+      setTimeout(() => setConfirmDeleteId(null), 3000);
       return;
     }
-    
-    if (!confirm("Excluir esta nota permanentemente?")) return;
     
     setSaving(true);
     const { error } = await supabase.from("tarefas").delete().eq("id", id);
@@ -90,14 +94,13 @@ const AdminTarefas = () => {
     } else {
       setTarefas(prev => {
         const nextList = prev.filter(t => t.id !== id);
-        // Se a nota excluída era a selecionada, seleciona a próxima ou limpa
         if (selectedTaskId === id) {
-          const nextId = nextList.length > 0 ? nextList[0].id : null;
-          setSelectedTaskId(nextId);
+          setSelectedTaskId(nextList.length > 0 ? nextList[0].id : null);
         }
         return nextList;
       });
       toast({ title: "Nota excluída com sucesso" });
+      setConfirmDeleteId(null);
     }
     setSaving(false);
   };
@@ -257,8 +260,8 @@ const AdminTarefas = () => {
                         e.stopPropagation();
                         deleteTask(selectedTask.id);
                       }} 
-                      className="hover:text-red-400 transition-colors p-2 -m-2"
-                      title="Excluir Nota"
+                      className={`transition-colors p-2 -m-2 ${confirmDeleteId === selectedTask.id ? 'text-red-500 scale-125' : 'hover:text-red-400'}`}
+                      title={confirmDeleteId === selectedTask.id ? "Confirmar Exclusão" : "Excluir Nota"}
                     >
                       <Trash2 size={20} />
                     </button>
