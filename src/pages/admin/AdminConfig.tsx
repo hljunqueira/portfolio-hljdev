@@ -101,8 +101,13 @@ const AdminConfig = () => {
         headers: { 'apikey': config.wa_api_key }
       });
       const data = await res.json();
-      setWaStatus(data.instance?.state === 'open' ? 'CONNECTED' : 'DISCONNECTED');
+      console.log("Check Status Response:", data);
+      
+      // Evolution v2 common fields: state, connectionStatus, or instance.state
+      const state = data.instance?.state || data.instance?.connectionStatus || data.status || data.state || data.instance?.connection?.state;
+      setWaStatus(state === 'open' || state === 'CONNECTED' || state === 'connected' ? 'CONNECTED' : 'DISCONNECTED');
     } catch (e) {
+      console.error("Check Status Error:", e);
       setWaStatus('DISCONNECTED');
     }
   };
@@ -110,68 +115,67 @@ const AdminConfig = () => {
   const generateQrCode = async () => {
     if (!sysConfig) return;
     setWaStatus('LOADING');
-      // Timeout de segurança de 20 segundos
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+    
+    // Timeout de segurança de 20 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-      try {
-        const url = `${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`;
-        console.log("Calling Evolution API:", url);
-        const res = await fetch(url, {
-          headers: { 'apikey': sysConfig.wa_api_key },
-          signal: controller.signal
+    try {
+      const url = `${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`;
+      console.log("Calling Evolution API Connect:", url);
+      
+      const res = await fetch(url, {
+        headers: { 'apikey': sysConfig.wa_api_key },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (res.status === 404) {
+        console.log("Instância não encontrada (404), tentando criar...");
+        const createUrl = `${sysConfig.wa_api_url}/instance/create`;
+        const createRes = await fetch(createUrl, {
+          method: 'POST',
+          headers: { 
+            'apikey': sysConfig.wa_api_key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            instanceName: sysConfig.wa_instance_name,
+            token: sysConfig.wa_api_key,
+            qrcode: true
+          })
         });
-        clearTimeout(timeoutId);
         
-        if (res.status === 404) {
-          console.log("Instância não encontrada (404), tentando criar...");
-          const createUrl = `${sysConfig.wa_api_url}/instance/create`;
-          const createRes = await fetch(createUrl, {
-            method: 'POST',
-            headers: { 
-              'apikey': sysConfig.wa_api_key,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              instanceName: sysConfig.wa_instance_name,
-              token: sysConfig.wa_api_key,
-              qrcode: true
-            })
-          });
-          
-          if (createRes.ok) {
-            setTimeout(generateQrCode, 2000);
-            return;
-          }
-        }
-
-        const data = await res.json();
-        console.log("Evolution API Data Received:", JSON.stringify(data, null, 2));
-
-        if (data.code) {
-          const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
-          setQrCode(qr);
-          setWaStatus('DISCONNECTED');
-          toast({ title: "QR Code Pronto!", description: "Escaneie agora." });
-        } else if (data.instance?.state === 'open' || data.status === 'CONNECTED') {
-          setWaStatus('CONNECTED');
-          setQrCode(null);
-          toast({ title: "WhatsApp Conectado!" });
-        } else {
-          console.log("Resposta sem código ou conexão:", data);
-          toast({ title: "Aguardando...", description: "A API ainda não gerou o código. Tente em instantes." });
-          setWaStatus('DISCONNECTED');
-        }
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          toast({ title: "Tempo Esgotado", description: "A Evolution API demorou muito para responder.", variant: "destructive" });
-        } else {
-          throw err;
+        if (createRes.ok) {
+          setTimeout(generateQrCode, 2000);
+          return;
         }
       }
-    } catch (e) {
-      console.error("WA Error:", e);
-      toast({ title: "Erro na Conexão", description: "Não foi possível falar com a Evolution API.", variant: "destructive" });
+
+      const data = await res.json();
+      console.log("Evolution API Connect Data Received:", JSON.stringify(data, null, 2));
+
+      if (data.code) {
+        const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
+        setQrCode(qr);
+        setWaStatus('DISCONNECTED');
+        toast({ title: "QR Code Pronto!", description: "Escaneie agora." });
+      } else if (data.instance?.state === 'open' || data.status === 'CONNECTED' || data.instance?.connectionStatus === 'open') {
+        setWaStatus('CONNECTED');
+        setQrCode(null);
+        toast({ title: "WhatsApp Conectado!" });
+      } else {
+        console.log("Resposta sem código ou conexão ativa:", data);
+        toast({ title: "Status: " + (data.instance?.state || data.status || "Desconectado") });
+        setWaStatus('DISCONNECTED');
+      }
+    } catch (err: any) {
+      console.error("WA Connection Process Error:", err);
+      if (err.name === 'AbortError') {
+        toast({ title: "Tempo Esgotado", description: "A Evolution API demorou muito para responder.", variant: "destructive" });
+      } else {
+        toast({ title: "Erro na Conexão", description: "Não foi possível falar com a Evolution API.", variant: "destructive" });
+      }
       setWaStatus('DISCONNECTED');
     }
   };
