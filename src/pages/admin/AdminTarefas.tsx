@@ -67,23 +67,39 @@ const AdminTarefas = () => {
     setSaving(true);
     const { error } = await supabase.from("tarefas").update(updates).eq("id", id);
     if (!error) {
-      setTarefas(tarefas.map(t => t.id === id ? { ...t, ...updates } : t));
+      setTarefas(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     }
     setSaving(false);
   };
 
   const deleteTask = async (id: string) => {
+    console.log("Tentando excluir nota:", id);
+    if (!id) {
+      toast({ title: "Erro", description: "ID da nota não encontrado", variant: "destructive" });
+      return;
+    }
+    
     if (!confirm("Excluir esta nota permanentemente?")) return;
+    
+    setSaving(true);
     const { error } = await supabase.from("tarefas").delete().eq("id", id);
+    
     if (error) {
       console.error("Delete error:", error);
       toast({ title: "Erro ao excluir nota", description: error.message, variant: "destructive" });
     } else {
-      const nextList = tarefas.filter(t => t.id !== id);
-      setTarefas(nextList);
-      setSelectedTaskId(nextList.length > 0 ? nextList[0].id : null);
-      toast({ title: "Nota excluída" });
+      setTarefas(prev => {
+        const nextList = prev.filter(t => t.id !== id);
+        // Se a nota excluída era a selecionada, seleciona a próxima ou limpa
+        if (selectedTaskId === id) {
+          const nextId = nextList.length > 0 ? nextList[0].id : null;
+          setSelectedTaskId(nextId);
+        }
+        return nextList;
+      });
+      toast({ title: "Nota excluída com sucesso" });
     }
+    setSaving(false);
   };
 
   const filteredTarefas = tarefas.filter(t => {
@@ -236,7 +252,14 @@ const AdminTarefas = () => {
                     <button onClick={() => updateTask(selectedTask.id, { concluida: !selectedTask.concluida })} className="hover:text-primary transition-colors">
                       {selectedTask.concluida ? <CheckCircle2 className="text-primary" size={20} /> : <Circle size={20} />}
                     </button>
-                    <button onClick={() => deleteTask(selectedTask.id)} className="hover:text-red-400 transition-colors">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTask(selectedTask.id);
+                      }} 
+                      className="hover:text-red-400 transition-colors p-2 -m-2"
+                      title="Excluir Nota"
+                    >
                       <Trash2 size={20} />
                     </button>
                   </div>
