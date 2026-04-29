@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
   X, Phone, Mail, Instagram, MessageCircle, 
   MapPin, Calendar, Star, Building2, ExternalLink,

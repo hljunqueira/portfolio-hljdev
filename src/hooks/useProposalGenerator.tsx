@@ -2,7 +2,7 @@ import { useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { ProposalDocument, ProposalData } from "@/components/admin/ProposalDocument";
 
-interface LeadInfo {
+export interface LeadInfo {
   nome: string;
   email?: string;
   whatsapp?: string;
@@ -218,18 +218,18 @@ export function useProposalGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastBlob, setLastBlob] = useState<Blob | null>(null);
 
-  const generateAndDownload = async (data: ProposalData) => {
+  const generateAndDownload = async (lead: LeadInfo) => {
     setIsGenerating(true);
     try {
-      const proposalText = await generateProposalText(data);
-      const doc = <ProposalDocument data={{ ...data, text: proposalText }} />;
+      const proposalData = await generateProposalWithGemini(lead);
+      const doc = <ProposalDocument data={proposalData} />;
       const blob = await pdf(doc).toBlob();
       setLastBlob(blob);
       
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Proposta_HLJ_DEV_${data.nome.replace(/\s+/g, '_')}.pdf`;
+      link.download = `Proposta_HLJ_DEV_${lead.nome.replace(/\s+/g, '_')}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
       
