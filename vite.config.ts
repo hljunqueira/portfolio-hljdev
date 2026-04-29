@@ -7,6 +7,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      '/api/webhook': {
+        target: 'https://n8n.hljdev.com.br',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/webhook/, '/webhook'),
+      }
+    }
   },
   plugins: [
     react(),

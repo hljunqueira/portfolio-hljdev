@@ -14,13 +14,14 @@ import {
   ChevronLeft,
   Menu,
   ShieldCheck,
+  BellRing
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/admin" },
-  { icon: Users, label: "Pipeline", to: "/admin/pipeline" },
+  { icon: Users, label: "Pipeline", to: "/admin/pipeline", showBadge: true },
   { icon: Map, label: "Campanhas Maps", to: "/admin/maps" },
   { icon: Calendar, label: "Agenda", to: "/admin/tarefas" },
   { icon: Briefcase, label: "Projetos", to: "/admin/projetos" },
@@ -31,6 +32,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,6 +47,77 @@ const Admin = () => {
       setLoading(false);
     };
     checkUser();
+    
+    // Fetch initial new leads count
+    const fetchNewLeadsCount = async () => {
+      const { count } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'novo');
+      
+      if (count !== null) setNewLeadsCount(count);
+    };
+    
+    fetchNewLeadsCount();
+
+    // Global realtime subscription for new leads
+    const channel = supabase.channel('global-admin-notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'leads' },
+        (payload) => {
+          const newLead = payload.new;
+          
+          // Increment count if it's a new lead
+          if (newLead.status === 'novo') {
+            setNewLeadsCount(prev => prev + 1);
+          }
+
+          // Trigger global toast notification for specific sources
+          const origem = newLead.origem?.toLowerCase() || '';
+          if (origem.includes('site') || origem.includes('instagram')) {
+            toast({
+              title: "🚀 Novo Lead Captado!",
+              description: `${newLead.nome} acabou de entrar via ${newLead.origem}.`,
+              duration: 10000,
+            });
+            
+            // Optional: Play a notification sound
+            try {
+              const audio = new Audio('/notification.mp3');
+              audio.play().catch(() => {}); // Ignore if browser blocks autoplay
+            } catch (e) {}
+          }
+        }
+      )
+      // Also listen for updates to decrement the badge if a lead is moved out of 'novo'
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'leads' },
+        (payload) => {
+          const oldLead = payload.old;
+          const newLead = payload.new;
+          if (oldLead.status === 'novo' && newLead.status !== 'novo') {
+            setNewLeadsCount(prev => Math.max(0, prev - 1));
+          } else if (oldLead.status !== 'novo' && newLead.status === 'novo') {
+            setNewLeadsCount(prev => prev + 1);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'leads' },
+        (payload) => {
+          if (payload.old.status === 'novo') {
+            setNewLeadsCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -77,10 +150,13 @@ const Admin = () => {
             {/* Logo */}
             <div className="flex items-center gap-3 px-6 py-8">
               <div
-                className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-lg shadow-primary/20"
+                className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-lg shadow-primary/20 relative"
                 onClick={() => navigate("/")}
               >
                 <ShieldCheck className="w-6 h-6 text-black" />
+                {collapsed && newLeadsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-zinc-950 animate-pulse" />
+                )}
               </div>
               {!collapsed && (
                 <motion.div
@@ -103,7 +179,7 @@ const Admin = () => {
 
             {/* Nav Items */}
             <nav className="flex-1 py-4 space-y-1.5 px-3 overflow-y-auto">
-              {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
+              {NAV_ITEMS.map(({ icon: Icon, label, to, showBadge }) => {
                 const isActive = to === "/admin"
                   ? location.pathname === "/admin"
                   : location.pathname.startsWith(to);
@@ -111,7 +187,7 @@ const Admin = () => {
                   <NavLink
                     key={to}
                     to={to}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all group ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all group relative ${
                       isActive
                         ? "bg-zinc-900 text-white shadow-sm"
                         : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
@@ -119,7 +195,15 @@ const Admin = () => {
                     title={collapsed ? label : undefined}
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "group-hover:text-primary"} transition-colors`} />
-                    {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+                    {!collapsed && <span className="whitespace-nowrap flex-1">{label}</span>}
+                    
+                    {/* Badge for new leads */}
+                    {showBadge && newLeadsCount > 0 && (
+                      <span className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[9px] font-black ${isActive ? 'bg-primary text-black' : 'bg-red-500 text-white'} ${collapsed ? 'absolute top-1 right-1' : ''}`}>
+                        {newLeadsCount}
+                      </span>
+                    )}
+
                     {isActive && !collapsed && (
                       <motion.div layoutId="activeNav" className="ml-auto w-1 h-4 bg-primary rounded-full" />
                     )}

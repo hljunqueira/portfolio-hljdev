@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bot, User, Send, Loader2, Zap, CheckCircle2, RefreshCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Lead } from "./LeadForm";
+import { supabase } from "@/lib/supabase";
 
 type Message = {
   id: string;
@@ -174,10 +175,20 @@ export function LeadChat() {
         endereco: leadData.endereco!,
         interesse: leadData.interesse!,
         mensagem: textToSend,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        status: "novo",
+        origem: "Site HLJ DEV"
       };
 
       try {
+        // 1. Salva no Supabase (Instantâneo para a Pipeline)
+        const { error: sbError } = await supabase.from("leads").insert(finalLeadData);
+        if (sbError) {
+          console.error("❌ Supabase insert failed:", sbError);
+          throw new Error("Erro ao registrar lead no sistema principal.");
+        }
+
+        // 2. Salva no banco local temporário
         const current = JSON.parse(localStorage.getItem("leads") || "[]");
         localStorage.setItem("leads", JSON.stringify([finalLeadData, ...current]));
 
