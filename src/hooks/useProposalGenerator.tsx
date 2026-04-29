@@ -196,6 +196,13 @@ async function generateProposalWithGemini(lead: LeadInfo): Promise<ProposalData>
     const cleaned = rawText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
 
+    const mockupMap: Record<string, string> = {
+      site: '/mockups/site.png',
+      sistema: '/mockups/sistema.png',
+      automacao: '/mockups/automacao.png',
+      consultoria: '/mockups/sistema.png'
+    };
+
     return {
       clientName: lead.nome,
       clientEmail: lead.email,
@@ -206,9 +213,17 @@ async function generateProposalWithGemini(lead: LeadInfo): Promise<ProposalData>
       investment: parsed.investment,
       paymentTerms: parsed.paymentTerms,
       validUntil: parsed.validUntil,
+      mockupUrl: mockupMap[serviceType] || mockupMap.sistema
     };
   } catch {
-    return buildFallback(lead, serviceType);
+    const fallback = buildFallback(lead, serviceType);
+    const mockupMap: Record<string, string> = {
+      site: '/mockups/site.png',
+      sistema: '/mockups/sistema.png',
+      automacao: '/mockups/automacao.png',
+      consultoria: '/mockups/sistema.png'
+    };
+    return { ...fallback, mockupUrl: mockupMap[serviceType] || mockupMap.sistema };
   }
 }
 

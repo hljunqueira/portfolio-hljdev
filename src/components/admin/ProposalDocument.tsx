@@ -6,6 +6,7 @@ import {
   Document,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 
 // Register a clean font (system fallback)
@@ -18,233 +19,182 @@ Font.register({
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: "#0a0a0a",
-    color: "#ffffff",
+    backgroundColor: "#ffffff",
+    color: "#18181b",
     fontFamily: "Helvetica",
-    padding: 0,
-  },
-  // Header stripe
-  headerBar: {
-    backgroundColor: "#22c55e",
-    height: 8,
-    width: "100%",
+    padding: 30,
   },
   header: {
-    backgroundColor: "#111111",
-    padding: "32px 48px 24px",
-    borderBottom: "1px solid #1f1f1f",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    borderBottom: "2px solid #22c55e",
+    paddingBottom: 15,
   },
-  agencyLabel: {
-    fontSize: 8,
-    color: "#22c55e",
-    letterSpacing: 4,
-    textTransform: "uppercase",
-    marginBottom: 8,
-    fontFamily: "Helvetica-Bold",
+  agencyInfo: {
+    flexDirection: "column",
   },
   agencyName: {
-    fontSize: 28,
-    color: "#ffffff",
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
-    letterSpacing: -1,
-    lineHeight: 1.1,
+    color: "#000000",
   },
   agencyNameAccent: {
     color: "#22c55e",
   },
   agencyTagline: {
-    fontSize: 9,
-    color: "#52525b",
-    letterSpacing: 3,
-    textTransform: "uppercase",
-    marginTop: 4,
-    fontFamily: "Helvetica-Bold",
-  },
-  headerRight: {
-    position: "absolute",
-    right: 48,
-    top: 32,
-    alignItems: "flex-end",
-  },
-  docLabel: {
     fontSize: 8,
-    color: "#22c55e",
-    letterSpacing: 4,
+    color: "#71717a",
     textTransform: "uppercase",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  docInfo: {
+    textAlign: "right",
   },
   docTitle: {
-    fontSize: 14,
-    color: "#ffffff",
+    fontSize: 12,
     fontFamily: "Helvetica-Bold",
-    letterSpacing: 1,
     textTransform: "uppercase",
+    color: "#22c55e",
   },
   docDate: {
     fontSize: 8,
-    color: "#52525b",
-    marginTop: 4,
-    fontFamily: "Helvetica",
+    color: "#a1a1aa",
+    marginTop: 2,
   },
-  // Body
-  body: {
-    padding: "32px 48px",
-    flex: 1,
-  },
-  // Client Info Block
-  clientBlock: {
-    backgroundColor: "#161616",
-    border: "1px solid #1f1f1f",
-    borderRadius: 12,
-    padding: "16px 20px",
-    marginBottom: 24,
+  clientSection: {
+    backgroundColor: "#f4f4f5",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
     flexDirection: "row",
-    gap: 32,
+    gap: 20,
   },
   clientField: {
     flex: 1,
   },
   fieldLabel: {
     fontSize: 7,
-    color: "#52525b",
-    letterSpacing: 3,
+    color: "#71717a",
     textTransform: "uppercase",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   fieldValue: {
-    fontSize: 11,
-    color: "#ffffff",
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
+    color: "#18181b",
   },
-  fieldValueSmall: {
-    fontSize: 9,
-    color: "#a1a1aa",
-    fontFamily: "Helvetica",
-  },
-  // Section
   sectionTitle: {
-    fontSize: 8,
-    color: "#22c55e",
-    letterSpacing: 4,
-    textTransform: "uppercase",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 12,
-    marginTop: 20,
-    borderBottom: "1px solid #1f1f1f",
-    paddingBottom: 8,
-  },
-  // Scope body text
-  proposalText: {
     fontSize: 10,
-    color: "#a1a1aa",
-    lineHeight: 1.7,
-    fontFamily: "Helvetica",
-  },
-  // Phase cards
-  phaseCard: {
-    backgroundColor: "#161616",
-    border: "1px solid #1f1f1f",
-    borderRadius: 8,
-    padding: "12px 16px",
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    color: "#000000",
     marginBottom: 8,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+    borderLeft: "3px solid #22c55e",
+    paddingLeft: 8,
   },
-  phaseNumber: {
-    backgroundColor: "#22c55e",
-    color: "#000000",
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  phaseNumberText: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: "#000000",
-  },
-  phaseContent: {
-    flex: 1,
-  },
-  phaseTitle: {
-    fontSize: 10,
-    color: "#ffffff",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 3,
-  },
-  phaseDesc: {
+  summaryText: {
     fontSize: 9,
-    color: "#71717a",
-    fontFamily: "Helvetica",
+    color: "#3f3f46",
     lineHeight: 1.5,
+    marginBottom: 10,
+    textAlign: "justify",
   },
-  // Pricing block
-  pricingBlock: {
-    backgroundColor: "#0d1f15",
-    border: "1px solid #1a3322",
-    borderRadius: 12,
-    padding: "20px 24px",
-    marginTop: 20,
-    flexDirection: "row",
+  mockupSection: {
+    marginVertical: 15,
     alignItems: "center",
-    justifyContent: "space-between",
   },
-  pricingLabel: {
-    fontSize: 8,
+  mockupImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 8,
+    objectFit: "cover",
+    border: "1px solid #e4e4e7",
+  },
+  mockupLabel: {
+    fontSize: 7,
     color: "#22c55e",
-    letterSpacing: 3,
+    fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
-  },
-  pricingValue: {
-    fontSize: 28,
-    color: "#ffffff",
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: -1,
-  },
-  pricingNote: {
-    fontSize: 8,
-    color: "#52525b",
-    fontFamily: "Helvetica",
-    marginTop: 4,
-  },
-  pricingBadge: {
-    backgroundColor: "#22c55e",
-    color: "#000000",
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
     letterSpacing: 2,
-    textTransform: "uppercase",
-    padding: "6px 14px",
+    marginTop: 6,
+  },
+  phasesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 20,
+  },
+  phaseCard: {
+    width: "48%",
+    backgroundColor: "#ffffff",
+    border: "1px solid #e4e4e7",
+    padding: 10,
     borderRadius: 6,
   },
-  // Footer
-  footer: {
-    backgroundColor: "#111111",
-    borderTop: "1px solid #1f1f1f",
-    padding: "16px 48px",
+  phaseHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    marginBottom: 4,
   },
-  footerText: {
-    fontSize: 8,
-    color: "#52525b",
-    fontFamily: "Helvetica",
+  phaseTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#18181b",
   },
-  footerBrand: {
+  phaseDuration: {
     fontSize: 8,
     color: "#22c55e",
     fontFamily: "Helvetica-Bold",
-    letterSpacing: 2,
+  },
+  phaseDesc: {
+    fontSize: 8,
+    color: "#71717a",
+    lineHeight: 1.4,
+  },
+  pricingFooter: {
+    marginTop: "auto",
+    paddingTop: 15,
+    borderTop: "1px solid #e4e4e7",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  investmentBox: {
+    backgroundColor: "#f0fdf4",
+    padding: "10px 20px",
+    borderRadius: 8,
+    border: "1px solid #dcfce7",
+  },
+  investmentLabel: {
+    fontSize: 8,
+    color: "#166534",
+    textTransform: "uppercase",
+    fontFamily: "Helvetica-Bold",
+  },
+  investmentValue: {
+    fontSize: 20,
+    fontFamily: "Helvetica-Bold",
+    color: "#14532d",
+  },
+  paymentTerms: {
+    fontSize: 8,
+    color: "#166534",
+    marginTop: 2,
+  },
+  footerBrand: {
+    textAlign: "right",
+  },
+  footerWeb: {
+    fontSize: 8,
+    color: "#71717a",
+  },
+  footerContact: {
+    fontSize: 8,
+    color: "#22c55e",
+    fontFamily: "Helvetica-Bold",
   },
 });
 
@@ -258,6 +208,7 @@ export interface ProposalData {
   investment: string;
   paymentTerms: string;
   validUntil: string;
+  mockupUrl?: string;
 }
 
 export function ProposalDocument({ data }: { data: ProposalData }) {
@@ -270,90 +221,68 @@ export function ProposalDocument({ data }: { data: ProposalData }) {
   return (
     <Document title={`Proposta HLJ DEV - ${data.clientName}`}>
       <Page size="A4" style={styles.page}>
-        {/* Green top bar */}
-        <View style={styles.headerBar} />
-
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.agencyLabel}>Agência de Tecnologia & IA</Text>
-          <Text style={styles.agencyName}>
-            HLJ <Text style={styles.agencyNameAccent}>DEV</Text>
-          </Text>
-          <Text style={styles.agencyTagline}>Sistemas • Automação • Inteligência Artificial</Text>
-
-          <View style={styles.headerRight}>
-            <Text style={styles.docLabel}>Proposta Comercial</Text>
+          <View style={styles.agencyInfo}>
+            <Text style={styles.agencyName}>
+              HLJ <Text style={styles.agencyNameAccent}>DEV</Text>
+            </Text>
+            <Text style={styles.agencyTagline}>Sistemas • Automação • IA</Text>
+          </View>
+          <View style={styles.docInfo}>
             <Text style={styles.docTitle}>{data.projectType}</Text>
             <Text style={styles.docDate}>Emitida em {today}</Text>
           </View>
         </View>
 
-        {/* Body */}
-        <View style={styles.body}>
-          {/* Client Info */}
-          <View style={styles.clientBlock}>
-            <View style={styles.clientField}>
-              <Text style={styles.fieldLabel}>Proposta para</Text>
-              <Text style={styles.fieldValue}>{data.clientName}</Text>
-            </View>
-            {data.clientPhone && (
-              <View style={styles.clientField}>
-                <Text style={styles.fieldLabel}>Contato</Text>
-                <Text style={styles.fieldValueSmall}>{data.clientPhone}</Text>
-              </View>
-            )}
-            {data.clientEmail && (
-              <View style={styles.clientField}>
-                <Text style={styles.fieldLabel}>E-mail</Text>
-                <Text style={styles.fieldValueSmall}>{data.clientEmail}</Text>
-              </View>
-            )}
-            <View style={styles.clientField}>
-              <Text style={styles.fieldLabel}>Válida até</Text>
-              <Text style={styles.fieldValueSmall}>{data.validUntil}</Text>
-            </View>
+        <View style={styles.clientSection}>
+          <View style={styles.clientField}>
+            <Text style={styles.fieldLabel}>Cliente</Text>
+            <Text style={styles.fieldValue}>{data.clientName}</Text>
           </View>
-
-          {/* Overview */}
-          <Text style={styles.sectionTitle}>Visão Geral do Projeto</Text>
-          <Text style={styles.proposalText}>{data.summary}</Text>
-
-          {/* Phases */}
-          <Text style={styles.sectionTitle}>Escopo e Cronograma de Fases</Text>
-          {data.phases.map((phase, index) => (
-            <View key={index} style={styles.phaseCard}>
-              <View style={styles.phaseNumber}>
-                <Text style={styles.phaseNumberText}>{index + 1}</Text>
-              </View>
-              <View style={styles.phaseContent}>
-                <Text style={styles.phaseTitle}>
-                  {phase.title} — {phase.duration}
-                </Text>
-                <Text style={styles.phaseDesc}>{phase.description}</Text>
-              </View>
-            </View>
-          ))}
-
-          {/* Pricing */}
-          <View style={styles.pricingBlock}>
-            <View>
-              <Text style={styles.pricingLabel}>Investimento Total</Text>
-              <Text style={styles.pricingValue}>{data.investment}</Text>
-              <Text style={styles.pricingNote}>{data.paymentTerms}</Text>
-            </View>
-            <Text style={styles.pricingBadge}>Aprovado</Text>
+          <View style={styles.clientField}>
+            <Text style={styles.fieldLabel}>E-mail / Telefone</Text>
+            <Text style={styles.fieldValue}>{data.clientEmail || data.clientPhone || "Direto"}</Text>
+          </View>
+          <View style={styles.clientField}>
+            <Text style={styles.fieldLabel}>Validade</Text>
+            <Text style={styles.fieldValue}>{data.validUntil}</Text>
           </View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            hljdev.com.br • contato@hljdev.com.br
-          </Text>
-          <Text style={styles.footerBrand}>HLJ DEV — Sistemas & IA</Text>
-          <Text style={styles.footerText}>
-            Proposta confidencial e não transferível
-          </Text>
+        <Text style={styles.sectionTitle}>Escopo Estratégico</Text>
+        <Text style={styles.summaryText}>{data.summary}</Text>
+
+        {data.mockupUrl && (
+          <View style={styles.mockupSection} wrap={false}>
+            <Text style={styles.sectionTitle}>Conceito Inicial & Design Proposto</Text>
+            <Image src={data.mockupUrl} style={styles.mockupImage} />
+            <Text style={styles.mockupLabel}>— Protótipo Visual Sugerido para {data.clientName} —</Text>
+          </View>
+        )}
+
+        <Text style={styles.sectionTitle}>Cronograma de Fases</Text>
+        <View style={styles.phasesGrid}>
+          {data.phases.map((phase, i) => (
+            <View key={i} style={styles.phaseCard}>
+              <View style={styles.phaseHeader}>
+                <Text style={styles.phaseTitle}>{phase.title}</Text>
+                <Text style={styles.phaseDuration}>{phase.duration}</Text>
+              </View>
+              <Text style={styles.phaseDesc}>{phase.description}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.pricingFooter}>
+          <View style={styles.investmentBox}>
+            <Text style={styles.investmentLabel}>Investimento Estimado</Text>
+            <Text style={styles.investmentValue}>{data.investment}</Text>
+            <Text style={styles.paymentTerms}>{data.paymentTerms}</Text>
+          </View>
+          <View style={styles.footerBrand}>
+            <Text style={styles.footerWeb}>hljdev.com.br</Text>
+            <Text style={styles.footerContact}>contato@hljdev.com.br</Text>
+          </View>
         </View>
       </Page>
     </Document>

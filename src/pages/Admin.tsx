@@ -37,16 +37,14 @@ const Admin = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/login");
-      } else {
-        setUser(user);
+    const fetchUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
       }
       setLoading(false);
     };
-    checkUser();
+    fetchUserData();
     
     // Fetch initial new leads count
     const fetchNewLeadsCount = async () => {

@@ -62,6 +62,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const { sendFile, isSending: isSendingWA } = useEvolution();
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
+  const [selectedService, setSelectedService] = useState<string>("sistema");
 
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -411,12 +412,20 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
       </div>
 
       {/* Footer */}
-      <div className="p-6 bg-zinc-900/60 border-t border-zinc-900 flex gap-4 shrink-0 mt-auto">
-        <Button 
-          className="flex-1 h-16 rounded-3xl bg-primary hover:bg-primary/90 text-black font-black uppercase text-sm tracking-[0.2em] gap-3 shadow-xl shadow-primary/20 transition-all active:scale-95"
-        >
-          <CheckCircle2 size={20} /> Qualificar este Lead
-        </Button>
+      <div className="p-4 border-t border-zinc-900 bg-zinc-950 flex items-center gap-3">
+        <div className="flex-1">
+          <select 
+            value={selectedService}
+            onChange={(e) => setSelectedService(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-2xl px-4 h-16 outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+          >
+            <option value="site">Site Profissional</option>
+            <option value="sistema">Sistema / SaaS</option>
+            <option value="automacao">Automação & IA</option>
+            <option value="consultoria">Suporte & Consultoria</option>
+          </select>
+        </div>
+
         <Button
           variant="ghost"
           onClick={() => generateAndDownload({
@@ -424,7 +433,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
             email: lead.email,
             whatsapp: lead.whatsapp,
             telefone: lead.telefone,
-            interesse: lead.tipo,
+            interesse: selectedService,
             empresa: lead.empresa,
             endereco: lead.endereco,
           })}
