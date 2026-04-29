@@ -26,6 +26,16 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Trash2, Edit2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Campaign {
   id: string;
@@ -45,6 +55,7 @@ const AdminCampaigns = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
 
   // Form State
   const [newCampaign, setNewCampaign] = useState({
@@ -112,10 +123,6 @@ const AdminCampaigns = () => {
   }, []);
 
   const handleDeleteCampaign = async (id: string) => {
-    if (!window.confirm("Deseja realmente excluir esta campanha? Todos os leads capturados continuarão salvos, mas a estratégia de busca será removida.")) {
-      return;
-    }
-
     const { error } = await supabase
       .from("campanhas_maps")
       .delete()
@@ -389,7 +396,7 @@ const AdminCampaigns = () => {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-zinc-800" />
                           <DropdownMenuItem 
-                            onClick={() => handleDeleteCampaign(camp.id)}
+                            onClick={() => setCampaignToDelete(camp.id)}
                             className="focus:bg-red-500/10 focus:text-red-500 cursor-pointer gap-2 text-red-500/70"
                           >
                             <Trash2 className="h-4 w-4" /> Excluir Estratégia
@@ -507,6 +514,30 @@ const AdminCampaigns = () => {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Delete Campaign Modal */}
+        <AlertDialog open={!!campaignToDelete} onOpenChange={() => setCampaignToDelete(null)}>
+          <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-red-900/10 backdrop-blur-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tighter text-xl">Excluir Campanha</AlertDialogTitle>
+              <AlertDialogDescription className="text-zinc-400 font-medium">
+                Todos os leads capturados continuarão salvos, mas a estratégia de busca será permanentemente removida.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel className="bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-black rounded-xl">Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (campaignToDelete) handleDeleteCampaign(campaignToDelete);
+                  setCampaignToDelete(null);
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white uppercase tracking-widest text-[10px] font-black rounded-xl"
+              >
+                Sim, Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );

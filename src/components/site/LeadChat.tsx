@@ -11,6 +11,7 @@ type Message = {
   id: string;
   sender: "bot" | "user";
   text: string;
+  image?: string;
 };
 
 type Step = "nome" | "email" | "whatsapp" | "cep" | "endereco" | "interesse" | "mensagem" | "done";
@@ -165,6 +166,27 @@ export function LeadChat() {
       setStep("done");
       
       setIsTyping(true);
+      setMessages((prev) => [...prev, { 
+        id: crypto.randomUUID(), 
+        sender: "bot", 
+        text: "Incrível! Enquanto nossos agentes analisam sua solicitação, pedi para nossa I.A. gerar um rascunho de como poderia ficar o seu projeto. Olha só:" 
+      }]);
+
+      // Generate a dynamic prompt based on user's input
+      const projectType = leadData.interesse || "website";
+      const userDesc = textToSend;
+      const prompt = encodeURIComponent(`A modern, premium, dark mode, highly professional ${projectType} ui design mockup, dribbble style, stunning interface, focusing on: ${userDesc}`);
+      const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=600&nologo=true`;
+
+      // Simulate a small delay for the "AI generation" effect
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { 
+          id: crypto.randomUUID(), 
+          sender: "bot", 
+          text: "O que achou desse estilo?",
+          image: imageUrl
+        }]);
+      }, 2500);
       
       // Simulate Webhook sending
       const finalLeadData: Lead = {
@@ -271,6 +293,11 @@ export function LeadChat() {
                 >
                   <div className={`max-w-[80%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender === "user" ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-secondary text-secondary-foreground rounded-tl-none border border-border/40"}`}>
                     {msg.text}
+                    {msg.image && (
+                      <div className="mt-3 rounded-xl overflow-hidden border border-border/50">
+                        <img src={msg.image} alt="AI Mockup Preview" className="w-full h-auto object-cover" loading="lazy" />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}

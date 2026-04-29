@@ -10,6 +10,16 @@ import {
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { toast } from "@/hooks/use-toast";
 import { LeadDetailsPanel } from "@/components/admin/LeadDetailsPanel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_COLS = [
   { key: "novo", label: "Novo", color: "border-blue-500/20 bg-blue-500/5", textColor: "text-blue-400" },
@@ -22,7 +32,8 @@ const STATUS_COLS = [
 const AdminPipeline = () => {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
 
   const fetchLeads = async () => {
@@ -257,15 +268,38 @@ const AdminPipeline = () => {
                 onClose={() => setSelectedLead(null)}
                 onAction={(action) => {
                   if (action === 'delete') {
-                    if (window.confirm("Deseja realmente excluir este lead?")) {
-                      handleDeleteLead(selectedLead.id);
-                    }
+                    setLeadToDelete(selectedLead.id);
                   }
                 }}
               />
             </div>
           )}
         </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
+          <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-red-900/10 backdrop-blur-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tighter text-xl">Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription className="text-zinc-400 font-medium">
+                Tem certeza que deseja excluir permanentemente este lead? Esta ação não poderá ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel className="bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-black rounded-xl">Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  if (leadToDelete) handleDeleteLead(leadToDelete);
+                  setLeadToDelete(null);
+                  setSelectedLead(null);
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white uppercase tracking-widest text-[10px] font-black rounded-xl"
+              >
+                Sim, Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );

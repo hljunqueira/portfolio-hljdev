@@ -10,6 +10,16 @@ import { FilterPanel, FilterState } from "./FilterPanel";
 import { MapContainer } from "./MapContainer";
 import { LeadDetailsPanel } from "./LeadDetailsPanel";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Lead {
   id: string;
@@ -39,6 +49,7 @@ export function LeadsMap() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [filters, setFilters] = useState<FilterState>({ search: "", status: [], minScore: 0 });
 
@@ -175,22 +186,42 @@ export function LeadsMap() {
                 onClose={() => setSelectedLead(null)}
                 onAction={async (action, leadParam) => {
                   if (action === 'delete') {
-                    const confirmDelete = window.confirm(`Tem certeza que deseja excluir o lead ${leadParam.nome}?`);
-                    if (confirmDelete) {
-                      const { error } = await supabase.from('leads').delete().eq('id', leadParam.id);
-                      if (!error) {
-                        setLeads(prev => prev.filter(l => l.id !== leadParam.id));
-                        setSelectedLead(null);
-                      } else {
-                        alert("Erro ao excluir lead: " + error.message);
-                      }
-                    }
+                    setLeadToDelete(leadParam);
                   }
                 }}
               />
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Lead AlertDialog */}
+        <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
+          <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-red-900/10 backdrop-blur-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tighter text-xl">Excluir Lead</AlertDialogTitle>
+              <AlertDialogDescription className="text-zinc-400 font-medium">
+                Tem certeza que deseja excluir permanentemente <span className="text-white font-bold">{leadToDelete?.nome}</span>? Esta ação não poderá ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel className="bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-black rounded-xl">Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (!leadToDelete) return;
+                  const { error } = await supabase.from('leads').delete().eq('id', leadToDelete.id);
+                  if (!error) {
+                    setLeads(prev => prev.filter(l => l.id !== leadToDelete.id));
+                    setSelectedLead(null);
+                  }
+                  setLeadToDelete(null);
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white uppercase tracking-widest text-[10px] font-black rounded-xl"
+              >
+                Sim, Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
