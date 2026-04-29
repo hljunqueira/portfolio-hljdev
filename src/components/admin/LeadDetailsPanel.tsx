@@ -7,6 +7,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProposalGenerator } from "@/hooks/useProposalGenerator";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
+import { Send } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -53,6 +57,41 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const isOperational = lead.business_status === 'OPERATIONAL';
   const isOpen = lead.horario?.open_now;
   const { generateAndDownload, isGenerating } = useProposalGenerator();
+  const queryClient = useQueryClient();
+  const [newNote, setNewNote] = useState("");
+
+  const { data: notes = [], isLoading: loadingNotes } = useQuery({
+    queryKey: ['lead-notes', lead.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lead_notas')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: async (conteudo: string) => {
+      const { error } = await supabase
+        .from('lead_notas')
+        .insert({ lead_id: lead.id, conteudo, autor: 'Admin' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead-notes', lead.id] });
+      setNewNote("");
+      toast({ title: "Nota adicionada", description: "O histórico foi atualizado." });
+    }
+  });
+
+  const handleAddNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+    addNoteMutation.mutate(newNote);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-zinc-950 relative">
@@ -301,33 +340,52 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           </div>
         </div>
 
-        {/* Reviews Section */}
-        {lead.reviews && lead.reviews.length > 0 && (
-          <div className="space-y-4 pt-4 border-t border-zinc-900">
-            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 flex items-center gap-2">
-              <Star size={12} className="text-amber-500" /> Avaliações Recentes
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {lead.reviews.slice(0, 4).map((review: any, idx: number) => (
-                <div key={idx} className="bg-zinc-900/40 border border-zinc-800 p-4 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-black text-white truncate max-w-[150px]">{review.author_name}</p>
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <Star size={8} fill="currentColor" />
-                      <span className="text-[9px] font-black">{review.rating}</span>
-                    </div>
+        {/* CRM Timeline Section */}
+        <div className="space-y-4 pt-6 border-t border-zinc-900">
+          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 flex items-center gap-2">
+            <Clock size={12} /> Histórico de Interações
+          </h3>
+
+          <form onSubmit={handleAddNote} className="flex gap-2">
+            <input 
+              type="text" 
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Adicionar uma nota interna..."
+              className="flex-1 bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary/50 transition-all"
+            />
+            <Button 
+              disabled={addNoteMutation.isPending || !newNote.trim()}
+              type="submit"
+              size="icon" 
+              className="rounded-xl h-9 w-9 shrink-0 bg-primary/10 text-primary hover:bg-primary hover:text-black border border-primary/20"
+            >
+              <Send size={14} />
+            </Button>
+          </form>
+
+          <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[1px] before:bg-zinc-800">
+            {notes.length === 0 && !loadingNotes && (
+              <p className="text-[10px] text-zinc-600 italic pl-8 py-2">Nenhuma nota registrada ainda.</p>
+            )}
+            
+            {notes.map((note: any) => (
+              <div key={note.id} className="relative pl-8">
+                <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-zinc-900 border-2 border-zinc-800 z-10" />
+                <div className="bg-zinc-900/40 border border-zinc-800/50 p-3 rounded-2xl space-y-1">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[9px] font-black text-primary uppercase tracking-widest">{note.autor}</p>
+                    <p className="text-[8px] text-zinc-600 font-bold uppercase">
+                      {new Date(note.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-zinc-400 line-clamp-3 leading-relaxed italic">
-                    {review.text ? `"${review.text}"` : <span className="opacity-50 font-normal">Avaliação sem comentário escrito.</span>}
-                  </p>
-                  <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-widest pt-1">
-                    {review.relative_time_description}
-                  </p>
+                  <p className="text-[11px] text-zinc-300 leading-relaxed">{note.conteudo}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
       </div>
 
       {/* Footer */}

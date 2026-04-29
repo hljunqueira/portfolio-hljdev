@@ -69,6 +69,16 @@ function buildPipelineData(leads: any[]) {
   }));
 }
 
+function findColdLeads(leads: any[]) {
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  
+  return leads.filter(l => 
+    ['novo', 'em_contato'].includes(l.status) && 
+    new Date(l.created_at) < threeDaysAgo
+  ).slice(0, 5);
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
@@ -85,6 +95,7 @@ const AdminDashboard = () => {
 
   const chartData    = leadsQuery.isSuccess ? buildChartData(leads) : [];
   const pipelineData = leadsQuery.isSuccess ? buildPipelineData(leads) : [];
+  const coldLeads    = leadsQuery.isSuccess ? findColdLeads(leads) : [];
 
   const kpis = [
     { label: "Leads Capturados",  value: leadsQuery.isPending  ? "..." : leadsCount,  icon: MessageSquare, color: "text-purple-400" },
@@ -185,6 +196,38 @@ const AdminDashboard = () => {
             </div>
           </section>
         </div>
+
+        {/* Cold Leads / Attention Needed Section */}
+        {coldLeads.length > 0 && (
+          <section className="bg-red-500/5 border border-red-500/10 p-6 rounded-3xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-black uppercase text-xs tracking-[0.2em] flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" /> Leads Sem Contato (3+ dias)
+              </h3>
+              <span className="text-[10px] font-black text-red-500/50 uppercase tracking-widest bg-red-500/5 px-3 py-1 rounded-full border border-red-500/10">Prioridade Alta</span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {coldLeads.map((lead) => (
+                <div key={lead.id} className="bg-black/40 border border-zinc-800/50 p-4 rounded-2xl flex items-center justify-between group hover:border-red-500/30 transition-all">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-white uppercase truncate">{lead.nome}</p>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-tight mt-0.5">
+                      {lead.status === 'novo' ? 'Aguardando Primeiro Contato' : 'Sem retorno em Contato'}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-[9px] font-black text-red-500/50 uppercase tracking-widest mb-1">Parado há</p>
+                    <p className="text-xs font-black text-white">
+                      {Math.floor((new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24))} dias
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </>
   );

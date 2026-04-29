@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, Phone, Star, Globe, Map as MapIcon, 
   GripVertical, Trash2, Calendar, Instagram, 
-  Filter, Search, LayoutGrid 
+  Filter, Search, LayoutGrid, Download 
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { LeadDetailsPanel } from "@/components/admin/LeadDetailsPanel";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,32 +143,69 @@ const AdminPipeline = () => {
             </p>
           </div>
 
-          {/* Filtros de Origem */}
-          <div className="flex items-center bg-zinc-900/50 border border-zinc-800 p-1.5 rounded-2xl gap-1">
-            <button 
-              onClick={() => setFilterOrigin('all')}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'all' ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (filteredLeads.length === 0) return;
+                const csvData = filteredLeads.map(l => ({
+                  Nome: l.nome,
+                  Email: l.email || "",
+                  Telefone: l.telefone || l.whatsapp || "",
+                  Empresa: l.empresa || "",
+                  Tipo: l.tipo || "",
+                  Status: l.status,
+                  Origem: l.origem || "",
+                  Score: l.lead_score,
+                  Data: new Date(l.created_at).toLocaleDateString('pt-BR')
+                }));
+                
+                const headers = Object.keys(csvData[0]).join(';');
+                const rows = csvData.map(row => Object.values(row).join(';'));
+                const csvContent = "\uFEFF" + [headers, ...rows].join('\n');
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `leads_hljdev_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="h-12 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all gap-2"
             >
-              Todos
-            </button>
-            <button 
-              onClick={() => setFilterOrigin('maps')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'maps' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <MapIcon size={12} /> Campanha
-            </button>
-            <button 
-              onClick={() => setFilterOrigin('site')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'site' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <Globe size={12} /> Site
-            </button>
-            <button 
-              onClick={() => setFilterOrigin('instagram')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'instagram' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-            >
-              <Instagram size={12} /> Instagram
-            </button>
+              <Download size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Exportar CSV</span>
+            </Button>
+
+            {/* Filtros de Origem */}
+            <div className="flex items-center bg-zinc-900/50 border border-zinc-800 p-1.5 rounded-2xl gap-1">
+              <button 
+                onClick={() => setFilterOrigin('all')}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'all' ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              >
+                Todos
+              </button>
+              <button 
+                onClick={() => setFilterOrigin('maps')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'maps' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              >
+                <MapIcon size={12} /> Campanha
+              </button>
+              <button 
+                onClick={() => setFilterOrigin('site')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'site' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              >
+                <Globe size={12} /> Site
+              </button>
+              <button 
+                onClick={() => setFilterOrigin('instagram')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'instagram' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              >
+                <Instagram size={12} /> Instagram
+              </button>
+            </div>
           </div>
         </header>
 

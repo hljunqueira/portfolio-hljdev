@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,8 +8,19 @@ import {
   X, Check
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_COLS = [
   { key: "briefing", label: "Briefing", color: "border-blue-500/30 bg-blue-500/5", textColor: "text-blue-400" },
@@ -19,63 +30,92 @@ const STATUS_COLS = [
 ];
 
 const AdminProjetos = () => {
-  const [projetos, setProjetos] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [newProject, setNewProject] = useState({ cliente_nome: "", lead_id: "", link_ambiente_teste: "" });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: projData } = await supabase.from("projetos").select("*, leads(nome, origem)").order("created_at", { ascending: false });
-    const { data: leadsData } = await supabase.from("leads").select("id, nome").order("nome");
-    setProjetos(projData ?? []);
-    setLeads(leadsData ?? []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const onDragEnd = async (result: any) => {
-    const { destination, source, draggableId } = result;
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
-    const newStatus = destination.droppableId;
-    const updated = projetos.map(p => p.id === draggableId ? { ...p, status: newStatus } : p);
-    setProjetos(updated);
-
-    const { error } = await supabase.from("projetos").update({ status: newStatus }).eq("id", draggableId);
-    if (error) {
-      toast({ title: "Erro ao mover projeto", description: error.message, variant: "destructive" });
-      fetchData();
-    } else {
-      toast({ title: "Status Atualizado", description: `Projeto movido para ${STATUS_COLS.find(c => c.key === newStatus)?.label}` });
+  const { data: projetos = [], isLoading: loading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("projetos").select("*, leads(nome, origem)").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
     }
-  };
+  });
 
-  const handleAddProject = async () => {
-    if (!newProject.cliente_nome) return;
-    const { error } = await supabase.from("projetos").insert([newProject]);
-    if (!error) {
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads-simple'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leads").select("id, nome").order("nome");
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("projetos").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] });
+      const prev = queryClient.getQueryData<any[]>(['projects']);
+      queryClient.setQueryData<any[]>(['projects'], old => 
+        (old ?? []).map(p => p.id === id ? { ...p, status } : p)
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(['projects'], ctx?.prev);
+      toast({ title: "Erro ao mover projeto", variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Status Atualizado" });
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (proj: typeof newProject) => {
+      const { error } = await supabase.from("projetos").insert([proj]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast({ title: "Projeto criado!" });
       setIsModalOpen(false);
       setNewProject({ cliente_nome: "", lead_id: "", link_ambiente_teste: "" });
-      fetchData();
     }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projetos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({ title: "Projeto excluído" });
+      setProjectToDelete(null);
+    }
+  });
+
+  const onDragEnd = (result: any) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    updateStatusMutation.mutate({ id: draggableId, status: destination.droppableId });
   };
 
-  const byStatus = (status: string) => projetos.filter((p) => p.status === status);
+  const handleAddProject = () => {
+    if (!newProject.cliente_nome) return;
+    createMutation.mutate(newProject);
+  };
 
-  const handleDeleteProject = async (id: string) => {
-    if (!confirm("Deseja realmente excluir este projeto?")) return;
-    const { error } = await supabase.from("projetos").delete().eq("id", id);
-    if (!error) {
-      setProjetos(prev => prev.filter(p => p.id !== id));
-      toast({ title: "Projeto excluído" });
-    }
+  const byStatus = (status: string) => (projetos || []).filter((p) => p.status === status);
+
+  const handleDeleteProject = (id: string) => {
+    setProjectToDelete(id);
   };
 
   return (
@@ -255,6 +295,26 @@ const AdminProjetos = () => {
             </div>
           )}
         </AnimatePresence>
+
+        <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+          <AlertDialogContent className="bg-zinc-950 border border-zinc-800 rounded-[2rem]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white font-black uppercase tracking-tighter">Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription className="text-zinc-500">
+                Esta ação não pode ser desfeita. O projeto será removido permanentemente da base de dados da HLJ DEV.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-zinc-900 border-zinc-800 text-zinc-400 rounded-xl hover:bg-zinc-800">Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => projectToDelete && deleteMutation.mutate(projectToDelete)}
+                className="bg-red-500 hover:bg-red-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl"
+              >
+                Excluir Projeto
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );
