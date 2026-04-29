@@ -63,7 +63,7 @@ export function LeadsMap() {
         .order("lead_score", { ascending: false });
 
       if (!error && data) {
-        setLeads(data);
+        setLeads(data as Lead[]);
       }
       setLoading(false);
     };

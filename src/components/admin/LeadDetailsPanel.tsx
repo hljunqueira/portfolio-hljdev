@@ -2,10 +2,11 @@ import {
   X, Phone, Mail, Instagram, MessageCircle, 
   MapPin, Calendar, Star, Building2, ExternalLink,
   CheckCircle2, Trash2, Globe, TrendingUp, Clock, DollarSign,
-  Target
+  Target, FileText, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useProposalGenerator } from "@/hooks/useProposalGenerator";
 
 interface Lead {
   id: string;
@@ -51,6 +52,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const hasBusinessData = !!lead.business_status;
   const isOperational = lead.business_status === 'OPERATIONAL';
   const isOpen = lead.horario?.open_now;
+  const { generateAndDownload, isGenerating } = useProposalGenerator();
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-zinc-950 relative">
@@ -334,6 +336,30 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           className="flex-1 h-16 rounded-3xl bg-primary hover:bg-primary/90 text-black font-black uppercase text-sm tracking-[0.2em] gap-3 shadow-xl shadow-primary/20 transition-all active:scale-95"
         >
           <CheckCircle2 size={20} /> Qualificar este Lead
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => generateAndDownload({
+            nome: lead.nome,
+            email: lead.email,
+            whatsapp: lead.whatsapp,
+            telefone: lead.telefone,
+            interesse: lead.tipo,
+            empresa: lead.empresa,
+            endereco: lead.endereco,
+          })}
+          disabled={isGenerating}
+          className="h-16 px-5 rounded-3xl bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 border border-zinc-700 transition-all flex items-center gap-2"
+          title="Gerar Proposta em PDF"
+        >
+          {isGenerating ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <FileText size={18} />
+          )}
+          <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">
+            {isGenerating ? "Gerando..." : "Proposta"}
+          </span>
         </Button>
         <Button 
           variant="ghost" 
