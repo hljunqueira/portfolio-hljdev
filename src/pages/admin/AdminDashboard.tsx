@@ -1,107 +1,102 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { useOutletContext } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import {
   Users, ShoppingCart, MessageSquare, Activity,
   ShieldCheck, AlertTriangle, TrendingUp, BarChart3
 } from "lucide-react";
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
 } from 'recharts';
 
-interface KPI {
-  label: string;
-  value: string | number;
-  icon: any;
-  color: string;
-  loading: boolean;
+// ── Data fetching functions ───────────────────────────────────────────────────
+
+async function fetchLeads() {
+  const { data, count, error } = await supabase
+    .from("leads")
+    .select("*", { count: "exact" });
+  if (error) throw error;
+  return { data: data ?? [], count: count ?? 0 };
 }
+
+async function fetchVendasCount() {
+  const { count, error } = await supabase
+    .from("vendas")
+    .select("*", { count: "exact", head: true });
+  if (error) throw error;
+  return count ?? 0;
+}
+
+async function fetchTarefasCount() {
+  const { count, error } = await supabase
+    .from("tarefas")
+    .select("*", { count: "exact", head: true })
+    .eq("concluida", false);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+// ── Chart helpers ─────────────────────────────────────────────────────────────
+
+function buildChartData(leads: any[]) {
+  if (leads.length === 0) return [{ date: 'Sem dados', leads: 0 }];
+  const groups = leads.reduce((acc: any, lead: any) => {
+    const date = new Date(lead.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.keys(groups)
+    .map(date => ({ date, leads: groups[date] }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-7);
+}
+
+function buildPipelineData(leads: any[]) {
+  const statusLabels: Record<string, string> = {
+    novo: 'Novo', em_contato: 'Contato',
+    proposta_enviada: 'Proposta', fechado: 'Fechado', perdido: 'Perdido'
+  };
+  const groups = leads.reduce((acc: any, lead: any) => {
+    acc[lead.status] = (acc[lead.status] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.keys(groups).map(status => ({
+    name: statusLabels[status] || status,
+    value: groups[status]
+  }));
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 const AdminDashboard = () => {
   const { user } = useOutletContext<{ user: any }>();
-  const [leads, setLeads] = useState<number | null>(null);
-  const [vendas, setVendas] = useState<number | null>(null);
-  const [tarefas, setTarefas] = useState<number | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [pipelineData, setPipelineData] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // Leads count
-      const { count: leadsCount, data: allLeads, error: leadsError } = await supabase
-        .from("leads").select("*", { count: "exact" });
-      
-      if (leadsError) console.error("Erro ao buscar leads:", leadsError);
-      
-      setLeads(leadsCount ?? 0);
+  const leadsQuery = useQuery({ queryKey: ['dashboard-leads'], queryFn: fetchLeads });
+  const vendasQuery = useQuery({ queryKey: ['dashboard-vendas'], queryFn: fetchVendasCount });
+  const tarefasQuery = useQuery({ queryKey: ['dashboard-tarefas'], queryFn: fetchTarefasCount });
 
-      // Aggregate data for AreaChart (Leads over time)
-      if (allLeads) {
-        const groups = allLeads.reduce((acc: any, lead: any) => {
-          const date = new Date(lead.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-          acc[date] = (acc[date] || 0) + 1;
-          return acc;
-        }, {});
-        
-        const formattedData = Object.keys(groups).map(date => ({
-          date,
-          leads: groups[date]
-        })).sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
-        
-        setChartData(formattedData.length > 0 ? formattedData : [{date: 'Sem dados', leads: 0}]);
+  const leads      = leadsQuery.data?.data ?? [];
+  const leadsCount = leadsQuery.data?.count ?? null;
+  const vendas     = vendasQuery.data ?? null;
+  const tarefas    = tarefasQuery.data ?? null;
 
-        // Aggregate data for BarChart (Pipeline)
-        const statusGroups = allLeads.reduce((acc: any, lead: any) => {
-          acc[lead.status] = (acc[lead.status] || 0) + 1;
-          return acc;
-        }, {});
+  const chartData    = leadsQuery.isSuccess ? buildChartData(leads) : [];
+  const pipelineData = leadsQuery.isSuccess ? buildPipelineData(leads) : [];
 
-        const statusLabels: any = {
-          'novo': 'Novo',
-          'em_contato': 'Contato',
-          'proposta_enviada': 'Proposta',
-          'fechado': 'Fechado',
-          'perdido': 'Perdido'
-        };
-
-        const pipeData = Object.keys(statusGroups).map(status => ({
-          name: statusLabels[status] || status,
-          value: statusGroups[status]
-        }));
-        setPipelineData(pipeData);
-      }
-
-      // Vendas count
-      const { count: vendasCount, error: vendasError } = await supabase
-        .from("vendas").select("*", { count: "exact", head: true });
-      if (vendasError) console.error("Erro ao buscar vendas:", vendasError);
-      setVendas(vendasCount ?? 0);
-
-      // Tarefas pendentes
-      const { count: tarefasCount, error: tarefasError } = await supabase
-        .from("tarefas").select("*", { count: "exact", head: true })
-        .eq("concluida", false);
-      if (tarefasError) console.error("Erro ao buscar tarefas:", tarefasError);
-      setTarefas(tarefasCount ?? 0);
-    };
-    fetchData();
-  }, []);
-
-  const kpis: KPI[] = [
-    { label: "Leads Capturados", value: leads ?? "...", icon: MessageSquare, color: "text-purple-400", loading: leads === null },
-    { label: "Vendas Realizadas", value: vendas ?? "...", icon: ShoppingCart, color: "text-amber-400", loading: vendas === null },
-    { label: "Tarefas Pendentes", value: tarefas ?? "...", icon: Activity, color: "text-blue-400", loading: tarefas === null },
-    { label: "Taxa Conversão", value: "0%", icon: TrendingUp, color: "text-emerald-400", loading: false },
+  const kpis = [
+    { label: "Leads Capturados",  value: leadsQuery.isPending  ? "..." : leadsCount,  icon: MessageSquare, color: "text-purple-400" },
+    { label: "Vendas Realizadas", value: vendasQuery.isPending  ? "..." : vendas,      icon: ShoppingCart,  color: "text-amber-400"  },
+    { label: "Tarefas Pendentes", value: tarefasQuery.isPending ? "..." : tarefas,     icon: Activity,      color: "text-blue-400"   },
+    { label: "Taxa Conversão",    value: "0%",                                         icon: TrendingUp,    color: "text-emerald-400", static: true },
   ];
 
   return (
     <>
       <Helmet><title>HLJ DEV | Dashboard</title></Helmet>
       <div className="p-6 md:p-10 space-y-8 max-w-[1600px] mx-auto">
-        {/* Header */}
         <header>
           <div className="flex items-center gap-2 text-primary/60 text-xs mb-2 uppercase tracking-[0.3em] font-black">
             <ShieldCheck className="h-3 w-3" /> Sessão Segura Ativa
@@ -109,7 +104,9 @@ const AdminDashboard = () => {
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">
             Painel de Controle <span className="text-primary">HLJ_DEV</span>
           </h1>
-          <p className="text-zinc-500 text-sm mt-1 font-medium">Bem-vindo, <span className="text-primary">{user?.email}</span></p>
+          <p className="text-zinc-500 text-sm mt-1 font-medium">
+            Bem-vindo, <span className="text-primary">{user?.email}</span>
+          </p>
         </header>
 
         {/* KPI Grid */}
@@ -127,7 +124,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">Live</div>
               </div>
-              <div className={`text-3xl font-black text-white mb-1 ${kpi.loading ? "animate-pulse" : ""}`}>
+              <div className={`text-3xl font-black text-white mb-1 ${kpi.value === "..." ? "animate-pulse" : ""}`}>
                 {kpi.value}
               </div>
               <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{kpi.label}</div>
@@ -136,7 +133,7 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Main Growth Chart */}
+          {/* Growth Chart */}
           <section className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-3xl">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-white font-black uppercase text-xs tracking-widest flex items-center gap-2">
@@ -154,39 +151,16 @@ const AdminDashboard = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#52525b" 
-                    fontSize={10} 
-                    fontWeight="bold"
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    stroke="#52525b" 
-                    fontSize={10} 
-                    fontWeight="bold"
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }}
-                    itemStyle={{ color: '#22c55e', fontWeight: 'bold' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="leads" 
-                    stroke="#22c55e" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorLeads)" 
-                  />
+                  <XAxis dataKey="date" stroke="#52525b" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <YAxis stroke="#52525b" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }} itemStyle={{ color: '#22c55e', fontWeight: 'bold' }} />
+                  <Area type="monotone" dataKey="leads" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </section>
 
-          {/* Pipeline Distribution Chart */}
+          {/* Pipeline Chart */}
           <section className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-3xl">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-white font-black uppercase text-xs tracking-widest flex items-center gap-2">
@@ -198,27 +172,11 @@ const AdminDashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pipelineData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#18181b" vertical={false} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#52525b" 
-                    fontSize={10} 
-                    fontWeight="bold"
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    stroke="#52525b" 
-                    fontSize={10} 
-                    fontWeight="bold"
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    cursor={{fill: 'transparent'}}
-                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }}
-                  />
+                  <XAxis dataKey="name" stroke="#52525b" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <YAxis stroke="#52525b" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', fontSize: '10px' }} />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                    {pipelineData.map((entry, index) => (
+                    {pipelineData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={['#3b82f6', '#f59e0b', '#a855f7', '#22c55e', '#ef4444'][index % 5]} />
                     ))}
                   </Bar>

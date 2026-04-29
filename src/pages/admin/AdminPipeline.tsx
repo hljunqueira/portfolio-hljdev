@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import {
   Filter, Search, LayoutGrid 
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { LeadDetailsPanel } from "@/components/admin/LeadDetailsPanel";
 import {
@@ -29,62 +30,83 @@ const STATUS_COLS = [
   { key: "perdido", label: "Perdido", color: "border-red-500/20 bg-red-500/5", textColor: "text-red-400" },
 ];
 
+const fetchLeads = async () => {
+  const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+};
+
 const AdminPipeline = () => {
-  const [leads, setLeads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
 
-  const fetchLeads = async () => {
-    const { data } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
-    setLeads(data ?? []);
-    setLoading(false);
-  };
+  const { data: leads = [], isLoading: loading } = useQuery({
+    queryKey: ['pipeline-leads'],
+    queryFn: fetchLeads,
+  });
 
-  useEffect(() => {
-    fetchLeads();
-  }, []);
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("leads").update({ status }).eq("id", id);
+      if (error) throw error;
+      return { id, status };
+    },
+    onMutate: async ({ id, status }) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ['pipeline-leads'] });
+      const prev = queryClient.getQueryData<any[]>(['pipeline-leads']);
+      queryClient.setQueryData<any[]>(['pipeline-leads'], old =>
+        (old ?? []).map(l => l.id === id ? { ...l, status } : l)
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(['pipeline-leads'], ctx?.prev);
+      toast({ title: "Erro ao mover lead", variant: "destructive" });
+    },
+    onSuccess: ({ id, status }) => {
+      toast({ title: "Lead atualizado", description: `Movido para ${STATUS_COLS.find(c => c.key === status)?.label}` });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-leads'] }); // sync dashboard
+      if (status === "fechado") {
+        const lead = (queryClient.getQueryData<any[]>(['pipeline-leads']) ?? []).find(l => l.id === id);
+        if (lead) {
+          supabase.from("projetos").insert({ cliente_nome: lead.nome, lead_id: lead.id, status: "briefing" })
+            .then(({ error }) => {
+              if (!error) toast({ title: "🚀 Projeto Iniciado!", description: `Projeto para ${lead.nome} criado automaticamente.` });
+            });
+        }
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("leads").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['pipeline-leads'] });
+      const prev = queryClient.getQueryData<any[]>(['pipeline-leads']);
+      queryClient.setQueryData<any[]>(['pipeline-leads'], old => (old ?? []).filter(l => l.id !== id));
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(['pipeline-leads'], ctx?.prev);
+      toast({ title: "Erro ao excluir lead", variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Lead excluído", description: "Removido com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-leads'] });
+    },
+  });
 
   const onDragEnd = async (result: any) => {
     const { destination, source, draggableId } = result;
-
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
-
-    // Optimistic update
-    const newStatus = destination.droppableId;
-    const updatedLeads = leads.map(l => l.id === draggableId ? { ...l, status: newStatus } : l);
-    setLeads(updatedLeads);
-
-    // DB update
-    const { error } = await supabase
-      .from("leads")
-      .update({ status: newStatus })
-      .eq("id", draggableId);
-
-    if (error) {
-      toast({ title: "Erro ao mover lead", description: error.message, variant: "destructive" });
-      fetchLeads(); // Rollback
-    } else {
-      toast({ title: "Lead atualizado", description: `Movido para ${STATUS_COLS.find(c => c.key === newStatus)?.label}` });
-      
-      // Se for fechado, criar projeto automaticamente
-      if (newStatus === "fechado") {
-        const lead = leads.find(l => l.id === draggableId);
-        if (lead) {
-          const { error: projectError } = await supabase.from("projetos").insert({
-            cliente_nome: lead.nome,
-            lead_id: lead.id,
-            status: "briefing"
-          });
-          
-          if (!projectError) {
-            toast({ title: "🚀 Projeto Iniciado!", description: `Um novo projeto para ${lead.nome} foi criado automaticamente.` });
-          }
-        }
-      }
-    }
+    updateStatusMutation.mutate({ id: draggableId, status: destination.droppableId });
   };
 
   const filteredLeads = leads.filter(l => {
@@ -97,15 +119,10 @@ const AdminPipeline = () => {
 
   const byStatus = (status: string) => filteredLeads.filter((l) => l.status === status);
 
-  const handleDeleteLead = async (id: string) => {
-    const { error } = await supabase.from("leads").delete().eq("id", id);
-    if (!error) {
-      setLeads(prev => prev.filter(l => l.id !== id));
-      setSelectedLead(null);
-      toast({ title: "Lead excluído", description: "O lead foi removido permanentemente." });
-    } else {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-    }
+  const handleDeleteLead = (id: string) => {
+    deleteMutation.mutate(id);
+    setSelectedLead(null);
+    setLeadToDelete(null);
   };
 
   return (
