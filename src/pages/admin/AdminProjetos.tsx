@@ -33,7 +33,13 @@ const AdminProjetos = () => {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  const [newProject, setNewProject] = useState({ cliente_nome: "", lead_id: "", link_ambiente_teste: "" });
+  const [newProject, setNewProject] = useState({ 
+    cliente_nome: "", 
+    lead_id: "", 
+    link_ambiente_teste: "",
+    valor_total: 0,
+    data_vencimento: ""
+  });
 
   const { data: projetos = [], isLoading: loading } = useQuery({
     queryKey: ['projects'],
@@ -84,7 +90,13 @@ const AdminProjetos = () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast({ title: "Projeto criado!" });
       setIsModalOpen(false);
-      setNewProject({ cliente_nome: "", lead_id: "", link_ambiente_teste: "" });
+      setNewProject({ 
+        cliente_nome: "", 
+        lead_id: "", 
+        link_ambiente_teste: "",
+        valor_total: 0,
+        data_vencimento: ""
+      });
     }
   });
 
@@ -127,7 +139,13 @@ const AdminProjetos = () => {
             <h1 className="text-3xl font-black text-white tracking-tighter uppercase">
               Projetos <span className="text-primary">em Andamento</span>
             </h1>
-            <p className="text-zinc-500 text-sm mt-1">{projetos.length} projetos em execução</p>
+            <div className="flex items-center gap-4 mt-1">
+              <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold">{projetos.length} Projetos Ativos</p>
+              <div className="h-4 w-[1px] bg-zinc-800" />
+              <p className="text-primary text-xs uppercase tracking-widest font-black">
+                Total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(projetos.reduce((acc, p) => acc + (Number(p.valor_total) || 0), 0))}
+              </p>
+            </div>
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
@@ -181,10 +199,36 @@ const AdminProjetos = () => {
                                     </div>
                                     <button 
                                       onClick={() => handleDeleteProject(p.id)}
-                                      className="text-zinc-600 hover:text-red-400 transition-colors shrink-0"
+                                      className="text-zinc-600 hover:text-red-400 transition-colors shrink-0 p-1"
                                     >
                                       <Trash2 size={12} />
                                     </button>
+                                  </div>
+
+                                  {/* Financeiro Simples */}
+                                  <div className="mb-4 bg-black/40 rounded-xl p-3 border border-white/5">
+                                    <div className="flex justify-between items-end mb-2">
+                                      <div>
+                                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Investimento</p>
+                                        <p className="text-sm font-black text-white tracking-tight">
+                                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor_total || 0)}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Status</p>
+                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                          (p.valor_pago >= p.valor_total && p.valor_total > 0) ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                                        }`}>
+                                          {(p.valor_pago >= p.valor_total && p.valor_total > 0) ? 'Quitado' : 'Pendente'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-primary transition-all duration-500" 
+                                        style={{ width: `${Math.min(100, ((p.valor_pago || 0) / (p.valor_total || 1)) * 100)}%` }}
+                                      />
+                                    </div>
                                   </div>
 
                                   {p.leads && (
@@ -281,6 +325,28 @@ const AdminProjetos = () => {
                         className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-white text-sm focus:border-primary transition-colors outline-none"
                         placeholder="https://test.salonart.com.br"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Valor Total (R$)</label>
+                        <input 
+                          type="number"
+                          value={newProject.valor_total}
+                          onChange={(e) => setNewProject({...newProject, valor_total: Number(e.target.value)})}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-white text-sm focus:border-primary transition-colors outline-none"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Vencimento</label>
+                        <input 
+                          type="date"
+                          value={newProject.data_vencimento}
+                          onChange={(e) => setNewProject({...newProject, data_vencimento: e.target.value})}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 text-white text-sm focus:border-primary transition-colors outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

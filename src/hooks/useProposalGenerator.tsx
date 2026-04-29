@@ -216,28 +216,30 @@ async function generateProposalWithGemini(lead: LeadInfo): Promise<ProposalData>
 
 export function useProposalGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastBlob, setLastBlob] = useState<Blob | null>(null);
 
-  const generateAndDownload = async (lead: LeadInfo) => {
+  const generateAndDownload = async (data: ProposalData) => {
     setIsGenerating(true);
     try {
-      const proposalData = await generateProposalWithGemini(lead);
-
-      const blob = await pdf(
-        <ProposalDocument data={proposalData} />
-      ).toBlob();
-
+      const proposalText = await generateProposalText(data);
+      const doc = <ProposalDocument data={{ ...data, text: proposalText }} />;
+      const blob = await pdf(doc).toBlob();
+      setLastBlob(blob);
+      
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.download = `Proposta_HLJ_DEV_${lead.nome.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(link);
+      link.download = `Proposta_HLJ_DEV_${data.nome.replace(/\s+/g, '_')}.pdf`;
       link.click();
-      document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      return blob;
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  return { generateAndDownload, isGenerating };
-}
+  return { generateAndDownload, isGenerating, lastBlob };
+};

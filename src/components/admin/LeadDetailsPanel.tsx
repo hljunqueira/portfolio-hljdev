@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProposalGenerator } from "@/hooks/useProposalGenerator";
+import { useEvolution } from "@/hooks/useEvolution";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -56,9 +57,29 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const hasBusinessData = !!lead.business_status;
   const isOperational = lead.business_status === 'OPERATIONAL';
   const isOpen = lead.horario?.open_now;
-  const { generateAndDownload, isGenerating } = useProposalGenerator();
+  const { generateAndDownload, isGenerating, lastBlob } = useProposalGenerator();
+  const { sendFile, isSending: isSendingWA } = useEvolution();
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState("");
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = (reader.result as string).split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!lastBlob || !lead.telefone && !lead.whatsapp) return;
+    const base64 = await blobToBase64(lastBlob);
+    const fileName = `Proposta_HLJ_DEV_${lead.nome.replace(/\s+/g, '_')}.pdf`;
+    await sendFile(lead.whatsapp || lead.telefone || "", base64, fileName);
+  };
 
   const { data: notes = [], isLoading: loadingNotes } = useQuery({
     queryKey: ['lead-notes', lead.id],
@@ -419,6 +440,25 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
             {isGenerating ? "Gerando..." : "Proposta"}
           </span>
         </Button>
+
+        {lastBlob && (lead.telefone || lead.whatsapp) && (
+          <Button
+            onClick={handleSendWhatsApp}
+            disabled={isSendingWA}
+            className="h-16 px-5 rounded-3xl bg-emerald-500 text-white hover:bg-emerald-600 border-none shadow-xl shadow-emerald-500/20 transition-all flex items-center gap-2 animate-in fade-in slide-in-from-right-4"
+            title="Enviar Proposta via WhatsApp"
+          >
+            {isSendingWA ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <MessageCircle size={18} fill="currentColor" />
+            )}
+            <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">
+              {isSendingWA ? "Enviando..." : "Enviar WA"}
+            </span>
+          </Button>
+        )}
+
         <Button 
           variant="ghost" 
           onClick={() => onAction('delete', lead)}
