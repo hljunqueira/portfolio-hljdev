@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Helmet } from "react-helmet-async";
-import { 
-  Settings, Plus, Pencil, Trash2, Check, X, AlertTriangle, 
-  BarChart2, Smartphone, Cpu, DollarSign, Activity, 
+import {
+  Settings, Plus, Pencil, Trash2, Check, X, AlertTriangle,
+  BarChart2, Smartphone, Cpu, DollarSign, Activity,
   RefreshCcw, QrCode, Wifi, WifiOff, Server
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,11 +17,11 @@ const AdminConfig = () => {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
-  
+
   // WhatsApp States
   const [waStatus, setWaStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'LOADING' | 'CONNECTING'>('LOADING');
   const [qrCode, setQrCode] = useState<string | null>(null);
-  
+
   // Health & Performance States
   const [health, setHealth] = useState({
     supabase: 'loading',
@@ -49,7 +49,7 @@ const AdminConfig = () => {
 
       const { data: sConfig } = await supabase.from("config_sistema").select("*").single();
       setSysConfig(sConfig);
-      
+
       checkHealth();
       if (sConfig) checkWaStatus(sConfig);
     } catch (error) {
@@ -102,9 +102,9 @@ const AdminConfig = () => {
       });
       const data = await res.json();
       console.log("Check Status Response:", data);
-      
+
       const state = data.instance?.state || data.instance?.connectionStatus || data.status || data.state || data.instance?.connection?.state;
-      
+
       if (state === 'open' || state === 'CONNECTED' || state === 'connected') {
         setWaStatus('CONNECTED');
       } else if (state === 'connecting' || state === 'CONNECTING') {
@@ -123,7 +123,7 @@ const AdminConfig = () => {
   const generateQrCode = async () => {
     if (!sysConfig) return;
     setWaStatus('LOADING');
-    
+
     // Timeout de segurança de 20 segundos
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -131,19 +131,19 @@ const AdminConfig = () => {
     try {
       const url = `${sysConfig.wa_api_url}/instance/connect/${sysConfig.wa_instance_name}`;
       console.log("Calling Evolution API Connect:", url);
-      
+
       const res = await fetch(url, {
         headers: { 'apikey': sysConfig.wa_api_key },
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      
+
       if (res.status === 404) {
         console.log("Instância não encontrada (404), tentando criar...");
         const createUrl = `${sysConfig.wa_api_url}/instance/create`;
         const createRes = await fetch(createUrl, {
           method: 'POST',
-          headers: { 
+          headers: {
             'apikey': sysConfig.wa_api_key,
             'Content-Type': 'application/json'
           },
@@ -153,7 +153,7 @@ const AdminConfig = () => {
             qrcode: true
           })
         });
-        
+
         if (createRes.ok) {
           setTimeout(generateQrCode, 2000);
           return;
@@ -205,13 +205,13 @@ const AdminConfig = () => {
   const cancelEdit = () => { setEditingId(null); setEditData({}); };
 
   const saveTemplateEdit = async () => {
-    const { error } = await supabase.from("templates_mensagem").update({ 
-      nome: editData.nome, texto: editData.texto, tipo: editData.tipo 
+    const { error } = await supabase.from("templates_mensagem").update({
+      nome: editData.nome, texto: editData.texto, tipo: editData.tipo
     }).eq("id", editingId);
-    
-    if (error) { 
-      toast({ title: "Erro", description: error.message, variant: "destructive" }); 
-      return; 
+
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
     }
     toast({ title: "Template salvo!" });
     cancelEdit(); loadData();
@@ -250,21 +250,21 @@ const AdminConfig = () => {
             </h1>
             <p className="text-zinc-500 text-sm mt-2 font-medium tracking-tight">Otimize a inteligência e infraestrutura do seu ecossistema.</p>
           </div>
-          
+
           <div className="flex gap-2">
             <HealthIndicator label="DB" status={health.supabase} latency={latency.supabase} />
             <HealthIndicator label="N8N" status={health.n8n} latency={latency.n8n} />
-            <HealthIndicator 
-              label="WA" 
-              status={waStatus === 'CONNECTED' ? 'online' : waStatus === 'CONNECTING' ? 'connecting' : 'error'} 
-              latency={latency.evolution} 
+            <HealthIndicator
+              label="WA"
+              status={waStatus === 'CONNECTED' ? 'online' : waStatus === 'CONNECTING' ? 'connecting' : 'error'}
+              latency={latency.evolution}
             />
           </div>
         </header>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-          <motion.div 
+          <motion.div
             whileHover={{ y: -4 }}
             className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-4 group"
           >
@@ -297,39 +297,37 @@ const AdminConfig = () => {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             whileHover={{ y: -4 }}
             className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 flex items-center justify-between group"
           >
             <div className="flex items-center gap-5">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform ${
-                waStatus === 'CONNECTED' ? 'bg-green-500/10 text-green-500' : 
-                waStatus === 'CONNECTING' ? 'bg-amber-500/10 text-amber-500 animate-pulse' :
-                'bg-orange-500/10 text-orange-500'
-              }`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform ${waStatus === 'CONNECTED' ? 'bg-green-500/10 text-green-500' :
+                  waStatus === 'CONNECTING' ? 'bg-amber-500/10 text-amber-500 animate-pulse' :
+                    'bg-orange-500/10 text-orange-500'
+                }`}>
                 {waStatus === 'CONNECTED' ? <Wifi size={28} /> : <WifiOff size={28} />}
               </div>
               <div>
                 <h3 className="text-white font-black uppercase text-sm tracking-tight">WhatsApp Elite</h3>
                 <p className="text-zinc-500 text-xs">
-                  {waStatus === 'CONNECTED' ? 'Conectado e operacional' : 
-                   waStatus === 'CONNECTING' ? 'Estabelecendo conexão...' :
-                   'Aguardando conexão'}
+                  {waStatus === 'CONNECTED' ? 'Conectado e operacional' :
+                    waStatus === 'CONNECTING' ? 'Estabelecendo conexão...' :
+                      'Aguardando conexão'}
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={generateQrCode}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                waStatus === 'CONNECTED' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 
-                waStatus === 'CONNECTING' ? 'bg-amber-500/20 text-amber-500' :
-                'bg-primary text-black hover:scale-105'
-              }`}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${waStatus === 'CONNECTED' ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' :
+                  waStatus === 'CONNECTING' ? 'bg-amber-500/20 text-amber-500' :
+                    'bg-primary text-black hover:scale-105'
+                }`}
               disabled={waStatus === 'CONNECTED' || waStatus === 'LOADING' || waStatus === 'CONNECTING'}
             >
-              {waStatus === 'CONNECTED' ? 'Ativo' : 
-               waStatus === 'CONNECTING' ? 'Sincronizando' :
-               waStatus === 'LOADING' ? 'Conectando...' : 'Conectar'}
+              {waStatus === 'CONNECTED' ? 'Ativo' :
+                waStatus === 'CONNECTING' ? 'Sincronizando' :
+                  waStatus === 'LOADING' ? 'Conectando...' : 'Conectar'}
             </button>
           </motion.div>
         </div>
@@ -337,20 +335,20 @@ const AdminConfig = () => {
         {/* WhatsApp Connection Modal (Elite Overlay) */}
         <AnimatePresence>
           {(waStatus === 'LOADING' || qrCode) && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
             >
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 className="bg-zinc-950 border border-zinc-800 p-10 rounded-[40px] max-w-sm w-full flex flex-col items-center gap-8 shadow-2xl shadow-primary/10 relative overflow-hidden"
               >
                 {/* Background Decor */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-                
+
                 {waStatus === 'LOADING' && !qrCode ? (
                   <div className="py-10 flex flex-col items-center gap-6">
                     <div className="relative">
@@ -378,8 +376,8 @@ const AdminConfig = () => {
                         <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
                         <span className="text-[9px] font-black text-primary uppercase tracking-widest">Aguardando Pareamento</span>
                       </div>
-                      <button 
-                        onClick={() => { setQrCode(null); setWaStatus('DISCONNECTED'); }} 
+                      <button
+                        onClick={() => { setQrCode(null); setWaStatus('DISCONNECTED'); }}
                         className="text-zinc-600 text-[10px] uppercase font-black hover:text-white transition-colors"
                       >
                         Cancelar Operação
@@ -399,21 +397,21 @@ const AdminConfig = () => {
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
                 <Cpu size={14} /> Inteligência Artificial (Groq/Llama)
               </h2>
-              
+
               <div className="space-y-6">
                 <div>
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">System Prompt (Personalidade)</label>
-                  <textarea 
+                  <textarea
                     value={sysConfig?.ai_system_prompt || ""}
                     onChange={(e) => setSysConfig({ ...sysConfig, ai_system_prompt: e.target.value })}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-zinc-200 text-sm min-h-[120px] focus:border-primary/50 transition-colors"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Modelo AI</label>
-                    <select 
+                    <select
                       value={sysConfig?.ai_model || ""}
                       onChange={(e) => setSysConfig({ ...sysConfig, ai_model: e.target.value })}
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-zinc-200 text-sm focus:border-primary/50"
@@ -426,7 +424,7 @@ const AdminConfig = () => {
                   <div>
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Alertar Lead a partir de:</label>
                     <div className="flex items-center gap-2">
-                      <input 
+                      <input
                         type="number"
                         value={sysConfig?.lead_score_threshold_alerta || 80}
                         onChange={(e) => setSysConfig({ ...sysConfig, lead_score_threshold_alerta: parseInt(e.target.value) })}
@@ -444,7 +442,7 @@ const AdminConfig = () => {
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
                 <DollarSign size={14} /> Tabela de Preços (Propostas IA)
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Sites Institucionais</h4>
@@ -470,25 +468,25 @@ const AdminConfig = () => {
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
                 <Activity size={14} /> Cadência de Vendas
               </h2>
-              
+
               <div className="space-y-8">
                 <div>
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4 block">Intervalo Follow-up 1</label>
-                  <CadenceControl 
-                    value={sysConfig?.followup_interval_1 || 24} 
-                    onChange={(val) => setSysConfig({ ...sysConfig, followup_interval_1: val })} 
+                  <CadenceControl
+                    value={sysConfig?.followup_interval_1 || 24}
+                    onChange={(val) => setSysConfig({ ...sysConfig, followup_interval_1: val })}
                   />
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4 block">Intervalo Follow-up 2</label>
-                  <CadenceControl 
-                    value={sysConfig?.followup_interval_2 || 72} 
-                    onChange={(val) => setSysConfig({ ...sysConfig, followup_interval_2: val })} 
+                  <CadenceControl
+                    value={sysConfig?.followup_interval_2 || 72}
+                    onChange={(val) => setSysConfig({ ...sysConfig, followup_interval_2: val })}
                   />
                 </div>
-                
+
                 <div className="pt-6">
-                  <button 
+                  <button
                     onClick={saveSysConfig}
                     disabled={saving}
                     className="w-full py-4 bg-primary text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
@@ -521,10 +519,10 @@ const AdminConfig = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         {editing ? (
-                          <input 
-                            value={editData.nome} 
+                          <input
+                            value={editData.nome}
                             onChange={(e) => setEditData({ ...editData, nome: e.target.value })}
-                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-200 text-xs w-full font-bold focus:border-primary/50" 
+                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-200 text-xs w-full font-bold focus:border-primary/50"
                           />
                         ) : (
                           <div className="flex items-center gap-2">
@@ -551,16 +549,16 @@ const AdminConfig = () => {
                     <div className="flex-1">
                       {editing ? (
                         <div className="space-y-3">
-                          <input 
-                            value={editData.tipo ?? ""} 
+                          <input
+                            value={editData.tipo ?? ""}
                             onChange={(e) => setEditData({ ...editData, tipo: e.target.value })}
-                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-400 text-[10px] w-full" 
-                            placeholder="Tipo (ex: follow-up)" 
+                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-zinc-400 text-[10px] w-full"
+                            placeholder="Tipo (ex: follow-up)"
                           />
-                          <textarea 
-                            value={editData.texto} 
+                          <textarea
+                            value={editData.texto}
                             onChange={(e) => setEditData({ ...editData, texto: e.target.value })}
-                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 text-xs w-full min-h-[100px] focus:border-primary/50" 
+                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-300 text-xs w-full min-h-[100px] focus:border-primary/50"
                           />
                         </div>
                       ) : (
@@ -583,7 +581,7 @@ const AdminConfig = () => {
             <div className="absolute top-0 right-0 p-12 text-red-500/5 rotate-12">
               <AlertTriangle size={160} />
             </div>
-            
+
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="w-20 h-20 rounded-3xl bg-red-500/20 flex items-center justify-center text-red-500 shrink-0">
                 <AlertTriangle size={40} />
@@ -591,23 +589,42 @@ const AdminConfig = () => {
               <div className="flex-1 text-center md:text-left">
                 <h3 className="text-white font-black uppercase text-xl tracking-tighter mb-2">Protocolo de Limpeza Total</h3>
                 <p className="text-zinc-500 text-sm leading-relaxed max-w-xl font-medium">
-                  Esta ação irá deletar <span className="text-red-400 font-bold uppercase underline">todos os leads</span> e zerar o banco de dados. 
+                  Esta ação irá deletar <span className="text-red-400 font-bold uppercase underline">todos os leads</span> e zerar o banco de dados.
                   Operação irreversível de alta criticidade.
                 </p>
               </div>
-              <button 
+              <button
                 onClick={async () => {
                   const confirm1 = confirm("⚠️ PROTOCOLO DE SEGURANÇA: Apagar TODOS os dados?");
                   if (!confirm1) return;
                   const confirm2 = confirm("🛑 ÚLTIMO AVISO: Não há recuperação de dados após isso. Confirmar?");
                   if (!confirm2) return;
 
-                  const { error: errorLeads } = await supabase.from("leads").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-                  if (errorLeads) {
-                    toast({ title: "Falha no Protocolo", variant: "destructive" });
-                  } else {
-                    toast({ title: "Sistema Resetado", description: "Todos os dados foram eliminados." });
-                    setTimeout(() => window.location.reload(), 1500);
+                  try {
+                    // Limpa tabelas dependentes para evitar violações de chave estrangeira
+                    await supabase.from("propostas").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+                    await supabase.from("tarefas").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+                    await supabase.from("projetos").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+                    const { error: errorLeads } = await supabase.from("leads").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+                    if (errorLeads) {
+                      console.error("Erro ao deletar leads:", errorLeads);
+                      toast({
+                        title: "Falha no Protocolo",
+                        description: errorLeads.message || "Erro ao excluir registros de leads.",
+                        variant: "destructive"
+                      });
+                    } else {
+                      toast({ title: "Sistema Resetado", description: "Todos os dados foram eliminados." });
+                      setTimeout(() => window.location.reload(), 1500);
+                    }
+                  } catch (err: any) {
+                    console.error("Erro inesperado na limpeza:", err);
+                    toast({
+                      title: "Falha no Protocolo",
+                      description: err.message || "Erro inesperado.",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="px-10 py-5 bg-red-500 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all shadow-2xl shadow-red-500/30 active:scale-95"
@@ -624,11 +641,10 @@ const AdminConfig = () => {
 
 const HealthIndicator = ({ label, status, latency }: { label: string, status: string, latency: number }) => (
   <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900/60 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700">
-    <div className={`w-2 h-2 rounded-full ${
-      status === 'online' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 
-      status === 'connecting' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)] animate-pulse' :
-      status === 'error' ? 'bg-red-500' : 'bg-zinc-700 animate-pulse'
-    }`} />
+    <div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' :
+        status === 'connecting' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)] animate-pulse' :
+          status === 'error' ? 'bg-red-500' : 'bg-zinc-700 animate-pulse'
+      }`} />
     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
     {status === 'online' && <span className="text-[9px] font-bold text-zinc-600">{latency}ms</span>}
   </div>
@@ -639,7 +655,7 @@ const PriceInput = ({ label, value, onChange }: { label: string, value: number, 
     <label className="text-[8px] text-zinc-600 uppercase font-black mb-1 block">{label}</label>
     <div className="relative">
       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">R$</span>
-      <input 
+      <input
         type="number"
         value={value || 0}
         onChange={(e) => onChange(parseFloat(e.target.value))}
@@ -653,9 +669,9 @@ const CadenceControl = ({ value, onChange }: { value: number, onChange: (v: numb
   <div className="flex flex-col gap-2">
     <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
       <span>{value} Horas</span>
-      <span>{Math.round(value/24)} Dias</span>
+      <span>{Math.round(value / 24)} Dias</span>
     </div>
-    <input 
+    <input
       type="range"
       min="1"
       max="168"
