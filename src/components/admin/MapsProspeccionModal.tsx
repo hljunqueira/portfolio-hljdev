@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, Search, Sparkles, CheckCircle2, AlertCircle, X, Globe, PhoneCall, Filter, ShieldCheck, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Search, Sparkles, CheckCircle2, AlertCircle, X, Globe, PhoneCall, Filter, ShieldCheck, Star, Navigation, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -10,34 +10,34 @@ interface MapsProspeccionModalProps {
   onSuccess?: () => void;
 }
 
-const ESTADOS_BRASIL = [
-  { uf: "AC", nome: "Acre", cidades: ["Rio Branco", "Cruzeiro do Sul", "Sena Madureira"] },
-  { uf: "AL", nome: "Alagoas", cidades: ["Maceió", "Arapiraca", "Rio Largo"] },
-  { uf: "AP", nome: "Amapá", cidades: ["Macapá", "Santana", "Laranjal do Jari"] },
-  { uf: "AM", nome: "Amazonas", cidades: ["Manaus", "Parintins", "Itacoatiara"] },
-  { uf: "BA", nome: "Bahia", cidades: ["Salvador", "Feira de Santana", "Vitória da Conquista", "Camaçari", "Juazeiro"] },
-  { uf: "CE", nome: "Ceará", cidades: ["Fortaleza", "Caucaia", "Juazeiro do Norte", "Sobral"] },
-  { uf: "DF", nome: "Distrito Federal", cidades: ["Brasília", "Taguatinga", "Ceilândia", "Águas Claras"] },
-  { uf: "ES", nome: "Espírito Santo", cidades: ["Vitória", "Vila Velha", "Serra", "Cariacica"] },
-  { uf: "GO", nome: "Goiás", cidades: ["Goiânia", "Aparecida de Goiânia", "Anápolis", "Rio Verde"] },
-  { uf: "MA", nome: "Maranhão", cidades: ["São Luís", "Imperatriz", "São José de Ribamar"] },
-  { uf: "MT", nome: "Mato Grosso", cidades: ["Cuiabá", "Várzea Grande", "Rondonópolis", "Sinop"] },
-  { uf: "MS", nome: "Mato Grosso do Sul", cidades: ["Campo Grande", "Dourados", "Três Lagoas"] },
-  { uf: "MG", nome: "Minas Gerais", cidades: ["Belo Horizonte", "Uberlândia", "Juiz de Fora", "Contagem", "Uberaba"] },
-  { uf: "PA", nome: "Pará", cidades: ["Belém", "Ananindeua", "Santarém", "Marabá"] },
-  { uf: "PB", nome: "Paraíba", cidades: ["João Pessoa", "Campina Grande", "Santa Rita"] },
-  { uf: "PR", nome: "Paraná", cidades: ["Curitiba", "Londrina", "Maringá", "Cascavel", "Ponta Grossa", "Foz do Iguaçu"] },
-  { uf: "PE", nome: "Pernambuco", cidades: ["Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru", "Petrolina"] },
-  { uf: "PI", nome: "Piauí", cidades: ["Teresina", "Parnaíba", "Picos"] },
-  { uf: "RJ", nome: "Rio de Janeiro", cidades: ["Rio de Janeiro", "Niterói", "Duque de Caxias", "Petrópolis", "Volta Redonda"] },
-  { uf: "RN", nome: "Rio Grande do Norte", cidades: ["Natal", "Mossoró", "Parnamirim"] },
-  { uf: "RS", nome: "Rio Grande do Sul", cidades: ["Porto Alegre", "Caxias do Sul", "Canoas", "Pelotas", "Santa Maria"] },
-  { uf: "RO", nome: "Rondônia", cidades: ["Porto Velho", "Ji-Paraná", "Ariquemes"] },
-  { uf: "RR", nome: "Roraima", cidades: ["Boa Vista", "Rorainópolis"] },
-  { uf: "SC", nome: "Santa Catarina", cidades: ["Florianópolis", "Joinville", "Blumenau", "Balneário Camboriú", "Chapecó", "Criciúma"] },
-  { uf: "SP", nome: "São Paulo", cidades: ["São Paulo", "Campinas", "Guarulhos", "Ribeirão Preto", "Santo André", "Sorocaba", "Santos"] },
-  { uf: "SE", nome: "Sergipe", cidades: ["Aracaju", "Nossa Senhora do Socorro", "Lagarto"] },
-  { uf: "TO", nome: "Tocantins", cidades: ["Palmas", "Araguaína", "Gurupi"] }
+const ALL_27_ESTADOS = [
+  { uf: "AC", nome: "Acre" },
+  { uf: "AL", nome: "Alagoas" },
+  { uf: "AP", nome: "Amapá" },
+  { uf: "AM", nome: "Amazonas" },
+  { uf: "BA", nome: "Bahia" },
+  { uf: "CE", nome: "Ceará" },
+  { uf: "DF", nome: "Distrito Federal" },
+  { uf: "ES", nome: "Espírito Santo" },
+  { uf: "GO", nome: "Goiás" },
+  { uf: "MA", nome: "Maranhão" },
+  { uf: "MT", nome: "Mato Grosso" },
+  { uf: "MS", nome: "Mato Grosso do Sul" },
+  { uf: "MG", nome: "Minas Gerais" },
+  { uf: "PA", nome: "Pará" },
+  { uf: "PB", nome: "Paraíba" },
+  { uf: "PR", nome: "Paraná" },
+  { uf: "PE", nome: "Pernambuco" },
+  { uf: "PI", nome: "Piauí" },
+  { uf: "RJ", nome: "Rio de Janeiro" },
+  { uf: "RN", nome: "Rio Grande do Norte" },
+  { uf: "RS", nome: "Rio Grande do Sul" },
+  { uf: "RO", nome: "Rondônia" },
+  { uf: "RR", nome: "Roraima" },
+  { uf: "SC", nome: "Santa Catarina" },
+  { uf: "SP", nome: "São Paulo" },
+  { uf: "SE", nome: "Sergipe" },
+  { uf: "TO", nome: "Tocantins" }
 ];
 
 const NICHOS_LEADSITE = [
@@ -81,8 +81,13 @@ const NICHOS_LEADSITE = [
 
 export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspeccionModalProps) => {
   const [selectedState, setSelectedState] = useState("SC");
-  const [selectedCity, setSelectedCity] = useState("Florianópolis");
+  const [citiesList, setCitiesList] = useState<string[]>([]);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+
+  const [selectedCity, setSelectedCity] = useState("TODAS");
+  const [customBairro, setCustomBairro] = useState("");
   const [customLocation, setCustomLocation] = useState("");
+  
   const [selectedNiche, setSelectedNiche] = useState("Clínicas Odontológicas");
   const [customNiche, setCustomNiche] = useState("");
 
@@ -94,9 +99,38 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
   const [isExtracting, setIsExtracting] = useState(false);
   const [stepStatus, setStepStatus] = useState<string | null>(null);
 
+  // Carregar 100% das cidades do Estado via API do IBGE
+  useEffect(() => {
+    if (!selectedState) return;
+    const fetchIbgeCities = async () => {
+      setIsLoadingCities(true);
+      try {
+        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`);
+        if (!res.ok) throw new Error("Erro IBGE");
+        const data = await res.json();
+        const cityNames = data.map((c: any) => c.nome);
+        setCitiesList(cityNames);
+        setSelectedCity("TODAS");
+      } catch (err) {
+        console.error("Erro ao carregar cidades do IBGE:", err);
+        setCitiesList(["Florianópolis", "Joinville", "Blumenau", "Curitiba", "São Paulo", "Porto Alegre", "Belo Horizonte"]);
+      } finally {
+        setIsLoadingCities(false);
+      }
+    };
+
+    fetchIbgeCities();
+  }, [selectedState]);
+
   if (!isOpen) return null;
 
-  const activeLocation = customLocation.trim() || `${selectedCity} - ${selectedState}`;
+  const currentEstObj = ALL_27_ESTADOS.find(e => e.uf === selectedState);
+  const activeBairroText = customBairro.trim();
+  const activeLocation = customLocation.trim() || (
+    selectedCity === "TODAS"
+      ? `Estado de ${currentEstObj?.nome || selectedState}`
+      : `${activeBairroText ? activeBairroText + ', ' : ''}${selectedCity} - ${selectedState}`
+  );
   const activeNiche = customNiche.trim() || selectedNiche;
 
   const handleStartExtraction = async () => {
@@ -140,7 +174,7 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
 
       toast({ 
         title: "Prospecção Iniciada!", 
-        description: `Buscando ${activeNiche} em ${activeLocation} (Filtro: Vácuo Digital & WhatsApp).` 
+        description: `Buscando ${activeNiche} em ${activeLocation}.` 
       });
 
       if (onSuccess) onSuccess();
@@ -157,8 +191,6 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
       setStepStatus(null);
     }
   };
-
-  const currentCities = ESTADOS_BRASIL.find(e => e.uf === selectedState)?.cidades || [];
 
   return (
     <AnimatePresence>
@@ -181,8 +213,8 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
                 <Globe size={20} />
               </div>
               <div>
-                <h3 className="text-white font-black uppercase text-sm tracking-tight">Prospecção LeadSite (Google Maps)</h3>
-                <p className="text-zinc-500 text-xs font-medium">Extraia empresas locais sem site com WhatsApp ativo.</p>
+                <h3 className="text-white font-black uppercase text-sm tracking-tight">Prospecção LeadSite (Dados Oficiais IBGE)</h3>
+                <p className="text-zinc-500 text-xs font-medium">Extraia empresas nos 27 estados e todos os 5.570 municípios do Brasil.</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-xl hover:bg-zinc-900 transition-all">
@@ -190,10 +222,10 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
             </button>
           </div>
 
-          {/* Seleção de Nicho */}
+          {/* 1. Seleção de Nicho */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">1. Selecione o Nicho Comercial</label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">1. Selecione o Nicho Comercial (36 Nichos)</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1">
               {NICHOS_LEADSITE.map((item) => (
                 <button
                   key={item.id}
@@ -201,7 +233,7 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
                     setSelectedNiche(item.label);
                     setCustomNiche("");
                   }}
-                  className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
                     selectedNiche === item.label && !customNiche
                       ? "bg-blue-500/20 border-blue-500 text-blue-300 font-bold"
                       : "bg-zinc-900/60 border-zinc-800/80 text-zinc-400 hover:border-zinc-700"
@@ -215,58 +247,75 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
 
             <input
               type="text"
-              placeholder="Ou digite um nicho específico (ex: Lojas de Noivas...)"
+              placeholder="Ou digite um nicho específico (ex: Lojas de Noivas, Podologia...)"
               value={customNiche}
               onChange={(e) => setCustomNiche(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:border-blue-500/50"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:border-blue-500/50"
             />
           </div>
 
-          {/* Seleção de Localização */}
+          {/* 2. Seleção de Localização IBGE (27 Estados + Cidades do IBGE) */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">2. Selecione o Estado e Cidade</label>
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">2. Selecione Estado (UF) e Cidade (Todos os Municípios IBGE)</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-[9px] font-bold text-zinc-500 uppercase block mb-1">Estado (UF)</label>
+                <label className="text-[9px] font-bold text-zinc-500 uppercase block mb-1">Estado (27 UFs)</label>
                 <select
                   value={selectedState}
-                  onChange={(e) => {
-                    setSelectedState(e.target.value);
-                    const firstCity = ESTADOS_BRASIL.find(est => est.uf === e.target.value)?.cidades[0] || "";
-                    setSelectedCity(firstCity);
-                  }}
+                  onChange={(e) => setSelectedState(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-xs font-bold text-zinc-200"
                 >
-                  {ESTADOS_BRASIL.map(est => (
+                  {ALL_27_ESTADOS.map(est => (
                     <option key={est.uf} value={est.uf}>{est.nome} ({est.uf})</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-[9px] font-bold text-zinc-500 uppercase block mb-1">Cidade</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[9px] font-bold text-zinc-500 uppercase">Cidade / Município</label>
+                  {isLoadingCities && (
+                    <span className="text-[9px] text-blue-400 flex items-center gap-1"><Loader2 size={10} className="animate-spin" /> IBGE...</span>
+                  )}
+                </div>
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
+                  disabled={isLoadingCities}
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-xs font-bold text-zinc-200"
                 >
-                  {currentCities.map((cidade, idx) => (
+                  <option value="TODAS">🌟 Todas as Cidades de {currentEstObj?.nome} ({citiesList.length} municípios)</option>
+                  {citiesList.map((cidade, idx) => (
                     <option key={idx} value={cidade}>{cidade}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <input
-              type="text"
-              placeholder="Ou digite bairro / cidade personalizada (ex: Moema, São Paulo)"
-              value={customLocation}
-              onChange={(e) => setCustomLocation(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-200 focus:border-blue-500/50"
-            />
+            <div>
+              <label className="text-[9px] font-bold text-zinc-500 uppercase block mb-1">Bairro / Região Específica (Opcional)</label>
+              <input
+                type="text"
+                placeholder="Ex: Centro, Moema, Batel, Barra da Tijuca..."
+                value={customBairro}
+                onChange={(e) => setCustomBairro(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:border-blue-500/50"
+              />
+            </div>
           </div>
 
-          {/* Filtros de Qualificação Avançada (Estilo LeadSite) */}
+          {/* Summary da Busca */}
+          <div className="bg-blue-500/10 border border-blue-500/20 p-3.5 rounded-2xl flex items-center gap-3">
+            <Navigation size={18} className="text-blue-400 shrink-0" />
+            <div>
+              <span className="text-[10px] font-black uppercase text-blue-400 block">Alvo Selecionado:</span>
+              <p className="text-white text-xs font-bold">
+                {activeNiche} em <span className="text-blue-300 underline">{activeLocation}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Filtros de Qualificação Avançada */}
           <div className="bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/80 space-y-4">
             <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
               <Filter size={12} /> Filtros de Qualificação da Extração
@@ -282,7 +331,7 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
                 />
                 <div>
                   <span className="text-xs font-bold text-zinc-200 block">Vácuo Digital</span>
-                  <span className="text-[9px] text-zinc-500 font-medium">Apenas empresas sem site ou desatualizadas</span>
+                  <span className="text-[9px] text-zinc-500 font-medium">Empresas sem site ou desatualizadas</span>
                 </div>
               </label>
 
@@ -295,33 +344,11 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
                 />
                 <div>
                   <span className="text-xs font-bold text-zinc-200 block">Validador WhatsApp</span>
-                  <span className="text-[9px] text-zinc-500 font-medium">Checar conta ativa na Evolution API</span>
+                  <span className="text-[9px] text-zinc-500 font-medium">Checar conta ativa via Evolution API</span>
                 </div>
               </label>
             </div>
-
-            <div>
-              <label className="text-[9px] font-bold text-zinc-400 uppercase block mb-1">Mínimo de Avaliações no Google Maps (Empresas validadas)</label>
-              <select
-                value={minRatingsCount}
-                onChange={(e) => setMinRatingsCount(parseInt(e.target.value))}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 font-bold"
-              >
-                <option value={0}>Qualquer número de avaliações</option>
-                <option value={5}>Mínimo de 5 avaliações</option>
-                <option value={15}>Mínimo de 15 avaliações (Recomendado)</option>
-                <option value={30}>Mínimo de 30 avaliações (Empresas de grande movimento)</option>
-              </select>
-            </div>
           </div>
-
-          {/* Progress Notification */}
-          {stepStatus && (
-            <div className="bg-zinc-900/90 p-3 rounded-xl border border-blue-500/30 flex items-center gap-2">
-              <Sparkles size={14} className="text-blue-400 animate-spin" />
-              <span className="text-xs font-bold text-zinc-200">{stepStatus}</span>
-            </div>
-          )}
 
           {/* Action Button */}
           <button
