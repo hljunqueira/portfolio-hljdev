@@ -154,10 +154,18 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     window.open(`https://wa.me/${finalPhone}`, '_blank');
   };
 
-  const googleMapsUrl = lead.google_maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.empresa || lead.nome} ${lead.endereco || ''}`)}`;
-  const googleReviewsUrl = (lead as any).place_id 
-    ? `https://search.google.com/local/reviews?placeid=${(lead as any).place_id}`
-    : googleMapsUrl;
+  const [selectedDemoType, setSelectedDemoType] = useState<string>("auto");
+
+  const companySlug = (lead.empresa || lead.nome)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const getDemoUrl = () => {
+    const typeParam = selectedDemoType !== "auto" ? `&type=${selectedDemoType}` : "";
+    return `${window.location.origin}/demo/${companySlug}?id=${lead.id}${typeParam}`;
+  };
 
   return (
     <>
@@ -269,39 +277,71 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           {activeTab === 'info' && (
             <div className="space-y-6">
               {/* Banner Demo de Site IA */}
-              <div className="bg-gradient-to-r from-blue-950/40 via-blue-900/30 to-purple-950/40 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between shadow-xl flex-wrap gap-3">
-                <div>
-                  <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider flex items-center gap-1">
-                    <Sparkles size={12} /> Demonstração Interativa ao Vivo
-                  </span>
-                  <h4 className="text-white font-bold text-xs mt-0.5">Site Modelo com Dados Reais do Lead</h4>
+              <div className="bg-gradient-to-r from-blue-950/40 via-blue-900/30 to-purple-950/40 border border-blue-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider flex items-center gap-1">
+                      <Sparkles size={12} /> Gerador de Demonstração por Nicho
+                    </span>
+                    <h4 className="text-white font-bold text-xs mt-0.5">Escolha o Tipo de Layout do Site</h4>
+                  </div>
+
+                  {/* Seletor de Tipo / Nicho */}
+                  <select
+                    value={selectedDemoType}
+                    onChange={(e) => setSelectedDemoType(e.target.value)}
+                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 font-bold focus:border-blue-500"
+                  >
+                    <option value="auto">⚡ Automático (Detecção IA)</option>
+                    <option value="dentista">🦷 Odontologia & Saúde</option>
+                    <option value="advogado">⚖️ Advocacia & Negócios</option>
+                    <option value="restaurante">🍽️ Gastronomia & Restaurantes</option>
+                    <option value="oficina">🚗 Centro Automotivo & Oficina</option>
+                  </select>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const companySlug = (lead.empresa || lead.nome)
-                        .toLowerCase()
-                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                        .replace(/[^a-z0-9]+/g, "-")
-                        .replace(/^-+|-+$/g, "");
-                      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
-                      navigator.clipboard.writeText(demoUrl);
-                      toast({ title: "Link Personalizado Copiado!", description: demoUrl });
-                    }}
-                    className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-xl border border-zinc-700 transition-all flex items-center gap-1"
-                  >
-                    📋 Copiar Link
-                  </button>
+                <div className="flex items-center justify-between pt-2 border-t border-blue-500/20 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const url = getDemoUrl();
+                        navigator.clipboard.writeText(url);
+                        toast({ title: "Link Personalizado Copiado!", description: url });
+                      }}
+                      className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-xl border border-zinc-700 transition-all flex items-center gap-1"
+                    >
+                      📋 Copiar Link
+                    </button>
 
-                  <a
-                    href={`/demo/${(lead.empresa || lead.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}?id=${lead.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
-                  >
-                    Ver Demo <ExternalLink size={12} />
-                  </a>
+                    <a
+                      href={getDemoUrl()}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
+                    >
+                      Ver Demo <ExternalLink size={12} />
+                    </a>
+                  </div>
+
+                  {/* Links Diretos para Webstudio e Penpot no VPS */}
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href="https://builder.hljdev.com.br"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
+                    >
+                      🛠️ Builder (Webstudio)
+                    </a>
+                    <a
+                      href="https://design.hljdev.com.br"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
+                    >
+                      🎨 Design (Penpot)
+                    </a>
+                  </div>
                 </div>
               </div>
 
