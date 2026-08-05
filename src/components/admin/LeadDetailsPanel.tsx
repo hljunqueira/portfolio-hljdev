@@ -155,6 +155,9 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   };
 
   const googleMapsUrl = lead.google_maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.empresa || lead.nome} ${lead.endereco || ''}`)}`;
+  const googleReviewsUrl = (lead as any).place_id 
+    ? `https://search.google.com/local/reviews?placeid=${(lead as any).place_id}`
+    : googleMapsUrl;
 
   return (
     <>
@@ -177,14 +180,19 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
                   <p className="text-zinc-400 text-xs font-bold mt-0.5">{lead.empresa}</p>
                 )}
 
-                {/* Rating Google Maps + Link direto */}
+                {/* Rating Google Maps + Link direto de Avaliações */}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {lead.rating && (
-                    <div className="flex items-center text-amber-400 text-xs font-bold gap-1">
-                      <Star size={12} className="fill-amber-400" /> {lead.rating}
-                      {lead.user_ratings_total && <span className="text-[10px] text-zinc-500 font-medium">({lead.user_ratings_total} avaliações)</span>}
-                    </div>
-                  )}
+                  <a 
+                    href={googleReviewsUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="flex items-center text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 px-2 py-0.5 rounded-md text-xs font-bold gap-1 transition-all"
+                  >
+                    <Star size={12} className="fill-amber-400" /> {lead.rating || "5.0"}
+                    <span className="text-[10px] text-amber-200/80 font-medium">
+                      ({lead.user_ratings_total || 0} avaliações no Google) <ExternalLink size={10} className="inline ml-0.5" />
+                    </span>
+                  </a>
 
                   <a 
                     href={googleMapsUrl} 
