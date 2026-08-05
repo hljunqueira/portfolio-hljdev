@@ -317,40 +317,57 @@ const AdminPipeline = () => {
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-4 transition-all group relative ${
+                                  onClick={() => setSelectedLead(lead)}
+                                  className={`bg-zinc-900/60 border border-zinc-800/80 hover:border-primary/50 rounded-2xl p-4 transition-all group relative cursor-pointer ${
                                     snapshot.isDragging ? "shadow-2xl shadow-primary/20 ring-2 ring-primary bg-zinc-900" : ""
                                   }`}
                                 >
                                   <div className="flex items-center justify-between mb-2">
-                                    <div {...provided.dragHandleProps} className="text-zinc-600 hover:text-zinc-400 cursor-grab p-1">
+                                    <div {...provided.dragHandleProps} className="text-zinc-600 hover:text-zinc-400 cursor-grab p-1" onClick={(e) => e.stopPropagation()}>
                                       <GripVertical size={14} />
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
-                                        score >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40" : "bg-zinc-800 text-zinc-400"
+                                        score >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40" :
+                                        score >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" :
+                                        "bg-zinc-800 text-zinc-400"
                                       }`}>
                                         {score} pts
                                       </span>
-                                      {isNoWebsite && (
-                                        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-500/20 text-red-400">
-                                          Sem Site
+
+                                      {isNoWebsite ? (
+                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_8px_rgba(239,68,68,0.2)]">
+                                          Vácuo Digital
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-blue-500/20 text-blue-400 border border-blue-500/40">
+                                          Com Site
                                         </span>
                                       )}
                                     </div>
                                   </div>
 
-                                  <h4 className="text-white font-black text-sm group-hover:text-primary transition-colors">
+                                  <h4 className="text-white font-black text-sm group-hover:text-primary transition-colors mt-1">
                                     {lead.nome}
                                   </h4>
 
+                                  {lead.empresa && lead.empresa !== lead.nome && (
+                                    <p className="text-zinc-400 text-xs font-medium mt-0.5 line-clamp-1">{lead.empresa}</p>
+                                  )}
+
                                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800/60 mt-3">
-                                    <span className="text-[9px] text-zinc-500 font-bold uppercase">{lead.origem || 'Maps'}</span>
-                                    <button
-                                      onClick={() => setSelectedLead(lead)}
-                                      className="px-2.5 py-1 bg-zinc-800 hover:bg-primary hover:text-black text-zinc-300 text-[10px] font-bold rounded-lg transition-all"
-                                    >
-                                      Gaveta <ArrowRight size={10} className="inline ml-0.5" />
-                                    </button>
+                                    <span className="text-[9px] text-zinc-500 font-bold uppercase">{lead.origem || 'Google Maps'}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedLead(lead);
+                                        }}
+                                        className="px-2.5 py-1 bg-zinc-800 hover:bg-primary hover:text-black text-zinc-300 text-[10px] font-bold rounded-lg transition-all flex items-center gap-1"
+                                      >
+                                        Gaveta <ArrowRight size={10} />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               )}
