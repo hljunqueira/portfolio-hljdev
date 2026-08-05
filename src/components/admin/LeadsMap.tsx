@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Map as MapIcon, Star, Target, TrendingUp, ChevronRight
+import { 
+  Map as MapIcon, Star, Target, TrendingUp, ChevronRight 
 } from 'lucide-react';
 import { MapContainer } from './MapContainer';
-import { FilterPanel } from './FilterPanel';
+import { FilterPanel, FilterState } from './FilterPanel';
 import { KPIWidget } from './KPIWidget';
 import { LeadDetailsPanel } from './LeadDetailsPanel';
 
@@ -44,16 +44,10 @@ interface LeadsMapProps {
 export function LeadsMap({ leads, onAction }: LeadsMapProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [filters, setFilters] = useState<{
-    search: string;
-    status: string[];
-    minScore: number;
-    hasWebsite: string;
-  }>({
+  const [filters, setFilters] = useState<FilterState>({
     search: '',
     status: [],
-    minScore: 0,
-    hasWebsite: 'all'
+    minScore: 0
   });
 
   // Dynamic Calculation from Real Database Records
@@ -68,12 +62,12 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
 
   const stats = {
     total: totalLeads,
-    avgScore: totalLeads > 0
+    avgScore: totalLeads > 0 
       ? Math.round(leads.reduce((acc, curr) => acc + (curr.lead_score ?? curr.score ?? 0), 0) / totalLeads)
       : 0,
     topLeads: leads.filter(l => (l.lead_score ?? l.score ?? 0) >= 70).length,
     todayLeads: todayLeadsCount,
-    conversionRate: totalLeads > 0
+    conversionRate: totalLeads > 0 
       ? Math.round((closedLeadsCount / totalLeads) * 100)
       : 0
   };
@@ -100,15 +94,17 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
     // Score Filter
     if (score < filters.minScore) return false;
 
-    // Website Filter
-    if (filters.hasWebsite === 'yes' && (!lead.website || lead.website.trim() === '')) return false;
-    if (filters.hasWebsite === 'no' && (lead.website && lead.website.trim() !== '')) return false;
-
     return true;
   });
 
-  const handleMarkerClick = (lead: Lead) => {
-    setSelectedLead(lead);
+  const mapReadyLeads = filteredLeads.map(l => ({
+    ...l,
+    lead_score: l.lead_score ?? l.score ?? 0
+  }));
+
+  const handleMarkerClick = (mapLead: any) => {
+    const fullLead = leads.find(l => l.id === mapLead.id) || mapLead;
+    setSelectedLead(fullLead);
   };
 
   const handleLeadAction = (action: string, lead: Lead) => {
@@ -121,37 +117,37 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
       {/* KPI Section - Dynamic Calculations */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-6 shrink-0 z-10 bg-black">
-        <KPIWidget
-          title="Total de Leads no Mapa"
-          value={stats.total}
-          icon={MapIcon}
-          color="text-primary"
+        <KPIWidget 
+          title="Total de Leads no Mapa" 
+          value={stats.total} 
+          icon={MapIcon} 
+          color="text-primary" 
         />
-        <KPIWidget
-          title="Score Médio Global"
-          value={`${stats.avgScore}/100`}
-          icon={Star}
-          color="text-amber-400"
+        <KPIWidget 
+          title="Score Médio Global" 
+          value={`${stats.avgScore}/100`} 
+          icon={Star} 
+          color="text-amber-400" 
         />
-        <KPIWidget
-          title="Leads Prioritários"
-          value={stats.topLeads}
-          icon={Target}
-          color="text-red-400"
+        <KPIWidget 
+          title="Leads Prioritários" 
+          value={stats.topLeads} 
+          icon={Target} 
+          color="text-red-400" 
           trend={stats.todayLeads > 0 ? `+${stats.todayLeads} HOJE` : undefined}
         />
-        <KPIWidget
-          title="Taxa de Conversão"
-          value={`${stats.conversionRate}%`}
-          icon={TrendingUp}
-          color="text-emerald-400"
+        <KPIWidget 
+          title="Taxa de Conversão" 
+          value={`${stats.conversionRate}%`} 
+          icon={TrendingUp} 
+          color="text-emerald-400" 
         />
       </div>
 
       {/* Main Map View */}
       <div className="flex-1 flex overflow-hidden relative border-t border-zinc-900 bg-black mx-6 mb-6 rounded-3xl ring-1 ring-zinc-800/50 shadow-2xl">
         {/* Left Filter Sidebar */}
-        <motion.div
+        <motion.div 
           animate={{ width: isSidebarOpen ? 320 : 0 }}
           className="shrink-0 relative z-20 bg-zinc-950/80 backdrop-blur-xl border-r border-zinc-900"
         >
@@ -163,16 +159,16 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="w-80 h-full p-4 overflow-y-auto"
               >
-                <FilterPanel
-                  totalLeads={leads.length}
+                <FilterPanel 
+                  totalLeads={leads.length} 
                   filteredCount={filteredLeads.length}
-                  onFilterChange={setFilters}
+                  onFilterChange={setFilters} 
                 />
               </motion.div>
             )}
           </AnimatePresence>
-
-          <button
+          
+          <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-12 bg-zinc-900 border border-zinc-800 rounded-r-xl flex items-center justify-center text-zinc-500 hover:text-primary transition-colors z-30"
           >
@@ -182,9 +178,9 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
 
         {/* Leaflet Google Maps View */}
         <div className="flex-1 relative z-10">
-          <MapContainer
-            leads={filteredLeads}
-            onMarkerClick={handleMarkerClick}
+          <MapContainer 
+            leads={mapReadyLeads}
+            onLeadSelect={handleMarkerClick}
             selectedLeadId={selectedLead?.id}
           />
         </div>
@@ -192,8 +188,8 @@ export function LeadsMap({ leads, onAction }: LeadsMapProps) {
 
       {/* Slide-over Drawer do Lead estilo LeadSite */}
       {selectedLead && (
-        <LeadDetailsPanel
-          lead={selectedLead}
+        <LeadDetailsPanel 
+          lead={selectedLead} 
           onClose={() => setSelectedLead(null)}
           onAction={handleLeadAction}
         />
