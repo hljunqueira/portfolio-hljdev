@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "hlj-extracao-maps",
+        "path": "hlj-webstudio-demo",
         "responseMode": "onReceived",
         "options": {}
       },
@@ -39,12 +39,47 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "INSERT INTO public.leads (nome, empresa, endereco, rating, user_ratings_total, origem, status, website)\nVALUES ($1, $1, $2, $3, $4, 'Prospecção Maps', 'novo', $5)\nON CONFLICT DO NOTHING;"
+        "method": "POST",
+        "url": "https://supabase.hljdev.com.br/rest/v1/leads",
+        "sendHeaders": true,
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3NzY4MTAyMTQsImV4cCI6MjA5MjE3MDIxNH0.SxJre7WkXHaiRMfZYBbrFstKtRFjydE3OrmAi_5DYVg"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "nome",
+              "value": "={{ $json.body.keyword }} em {{ $json.body.location }}"
+            },
+            {
+              "name": "origem",
+              "value": "Prospecção Maps N8N"
+            },
+            {
+              "name": "status",
+              "value": "novo"
+            }
+          ]
+        },
+        "options": {}
       },
-      "name": "Salvar Lead no Supabase",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 1,
+      "name": "Salvar Lead no Supabase REST",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
       "position": [
         710,
         300
@@ -67,12 +102,15 @@
       "main": [
         [
           {
-            "node": "Salvar Lead no Supabase",
+            "node": "Salvar Lead no Supabase REST",
             "type": "main",
             "index": 0
           }
         ]
       ]
     }
+  },
+  "settings": {
+    "executionOrder": "v1"
   }
 }

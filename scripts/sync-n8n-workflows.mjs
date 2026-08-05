@@ -46,8 +46,13 @@ async function deployWorkflow(filePath, existingWorkflows) {
 
     if (updateRes.ok) {
       console.log(`✅ Workflow "${name}" atualizado com sucesso!`);
-      // Ativar workflow
-      await fetch(`${N8N_URL}/api/v1/workflows/${existing.id}/activate`, { method: "POST", headers: HEADERS });
+      // Ativar workflow no N8N
+      const actRes = await fetch(`${N8N_URL}/api/v1/workflows/${existing.id}/activate`, { method: "POST", headers: HEADERS });
+      if (actRes.ok) {
+        console.log(`⚡ Workflow "${name}" PUBLICADO E ATIVADO!`);
+      } else {
+        console.log(`ℹ️ Ativação do workflow:`, await actRes.text());
+      }
     } else {
       console.error(`❌ Erro ao atualizar "${name}":`, await updateRes.text());
     }

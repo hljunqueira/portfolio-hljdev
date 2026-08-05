@@ -3,7 +3,7 @@ import {
   X, Phone, Mail, Instagram, MessageCircle, 
   MapPin, Calendar, Star, Building2, ExternalLink,
   CheckCircle2, Trash2, Globe, TrendingUp, Clock, DollarSign,
-  Target, FileText, Loader2, Sparkles, Send, Activity, ShieldCheck, ArrowRight
+  Target, FileText, Loader2, Sparkles, Send, Activity, ShieldCheck, ArrowRight, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,15 +143,50 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     }
   };
 
+  const [isTriggeringN8N, setIsTriggeringN8N] = useState(false);
+
   const handleOpenWhatsAppDirect = () => {
     const phone = lead.whatsapp || lead.telefone;
     if (!phone) {
-      toast({ title: "Sem número de WhatsApp", variant: "destructive" });
+      toast({ title: "Telefone não encontrado", description: "O lead não possui telefone cadastrado.", variant: "destructive" });
       return;
     }
     const clean = phone.replace(/\D/g, '');
     const finalPhone = clean.length <= 11 ? `55${clean}` : clean;
-    window.open(`https://wa.me/${finalPhone}`, '_blank');
+    const company = lead.empresa || lead.nome;
+    const cleanName = company.split(/[|:-]/)[0].trim();
+    const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
+    const message = encodeURIComponent(`Olá! Notei a atuação da ${cleanName} e preparei uma demonstração interativa exclusiva de como ficaria a presença digital de vocês: ${demoUrl}`);
+    window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+  };
+
+  const handleTriggerN8N = async () => {
+    setIsTriggeringN8N(true);
+    try {
+      const res = await fetch("https://n8n.hljdev.com.br/webhook/hlj-webstudio-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: lead.id,
+          nome: lead.nome,
+          empresa: lead.empresa,
+          whatsapp: lead.whatsapp || lead.telefone,
+          endereco: lead.endereco,
+          type: selectedProjectType
+        })
+      });
+
+      if (res.ok) {
+        toast({ title: "Automação N8N Iniciada! 🚀", description: "O fluxo de prospecção e geração de demo foi disparado no N8N." });
+      } else {
+        toast({ title: "Erro na Automação N8N", description: `Status: ${res.status}`, variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Erro ao chamar webhook N8N:", err);
+      toast({ title: "Falha de Conexão N8N", description: "Verifique o status do servidor N8N.", variant: "destructive" });
+    } finally {
+      setIsTriggeringN8N(false);
+    }
   };
 
   const googleMapsUrl = lead.google_maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.empresa || lead.nome} ${lead.endereco || ''}`)}`;
@@ -159,17 +194,40 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     ? `https://search.google.com/local/reviews?placeid=${(lead as any).place_id}`
     : googleMapsUrl;
 
-  const [selectedDemoType, setSelectedDemoType] = useState<string>("auto");
-
   const companySlug = (lead.empresa || lead.nome)
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  const getDemoUrl = () => {
-    const typeParam = selectedDemoType !== "auto" ? `&type=${selectedDemoType}` : "";
-    return `${window.location.origin}/demo/${companySlug}?id=${lead.id}${typeParam}`;
+  const [selectedProjectType, setSelectedProjectType] = useState<string>("site_institucional");
+
+  const generateLovablePrompt = () => {
+    const company = lead.empresa || lead.nome;
+    const projectLabels: Record<string, string> = {
+      site_institucional: "Site Institucional de Elite de alta conversão",
+      site_animado: "Site Animado com efeitos 3D, glassmorphism e micro-interações",
+      sistema_web: "Sistema Web Customizado com Dashboard, Gestão de Clientes e Relatórios",
+      app_mobile: "Aplicativo Mobile PWA com agendamentos e notificações push"
+    };
+
+    const projectGoal = projectLabels[selectedProjectType] || projectLabels.site_institucional;
+    const ratingText = lead.rating ? `Nota ${lead.rating} no Google Maps (${lead.user_ratings_total || 10} avaliações)` : "Atendimento de Excelência";
+    const addressText = lead.endereco ? `Localização: ${lead.endereco}` : "";
+    const phoneText = lead.whatsapp || lead.telefone ? `WhatsApp de contato: ${lead.whatsapp || lead.telefone}` : "";
+
+    return `Construa um ${projectGoal} para a empresa "${company}".
+Requisitos da Empresa:
+- Nicho: ${lead.categorias?.join(", ") || "Serviços Especializados"}
+- Reputação: ${ratingText}
+- ${addressText}
+- ${phoneText}
+
+Diretrizes Visuais & UX:
+1. Design moderno, elegante e responsivo com tema Dark Mode de alta conversão.
+2. Cabeçalho com o nome "${company}", selo de confiança e botão de ação rápida no WhatsApp.
+3. Seções estruturadas: Hero persuasivo, Grid de Serviços/Recursos, Depoimentos de Clientes, Tabela de Preços/Benefícios e Rodapé Institucional.
+4. Botões de agendamento e contato direto via WhatsApp.`;
   };
 
   return (
@@ -281,45 +339,52 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           {/* TAB 1: VISÃO GERAL */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              {/* Banner Demo de Site IA */}
-              <div className="bg-gradient-to-r from-blue-950/40 via-blue-900/30 to-purple-950/40 border border-blue-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
+              {/* Banner Gerador de Protótipo IA (Estilo Lovable / Bolt) */}
+              <div className="bg-gradient-to-r from-purple-950/40 via-blue-900/30 to-blue-950/40 border border-purple-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider flex items-center gap-1">
-                      <Sparkles size={12} /> Gerador de Demonstração por Nicho
+                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider flex items-center gap-1">
+                      <Sparkles size={12} /> Gerador de Protótipos IA (Lovable / Bolt Engine)
                     </span>
-                    <h4 className="text-white font-bold text-xs mt-0.5">Escolha o Tipo de Layout do Site</h4>
+                    <h4 className="text-white font-bold text-xs mt-0.5">Selecione o Tipo de Projeto para o Lead</h4>
                   </div>
 
-                  {/* Seletor de Tipo / Nicho */}
+                  {/* Seletor do Tipo de Entregável */}
                   <select
-                    value={selectedDemoType}
-                    onChange={(e) => setSelectedDemoType(e.target.value)}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 font-bold focus:border-blue-500"
+                    value={selectedProjectType}
+                    onChange={(e) => setSelectedProjectType(e.target.value)}
+                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 font-bold focus:border-purple-500"
                   >
-                    <option value="auto">⚡ Automático (Detecção IA)</option>
-                    <option value="dentista">🦷 Odontologia & Saúde</option>
-                    <option value="advogado">⚖️ Advocacia & Negócios</option>
-                    <option value="restaurante">🍽️ Gastronomia & Restaurantes</option>
-                    <option value="oficina">🚗 Centro Automotivo & Oficina</option>
+                    <option value="site_institucional">🌐 Site Institucional de Elite</option>
+                    <option value="site_animado">🚀 Site Animado 3D / Framer</option>
+                    <option value="sistema_web">💻 Sistema Web Customizado</option>
+                    <option value="app_mobile">📱 Aplicativo Mobile / Web App</option>
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-blue-500/20 flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between pt-2 border-t border-purple-500/20 flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={handleTriggerN8N}
+                      disabled={isTriggeringN8N}
+                      className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-lg shadow-purple-600/20 transition-all"
+                    >
+                      {isTriggeringN8N ? <Loader2 className="animate-spin" size={14} /> : <Zap size={14} />} Disparar N8N
+                    </button>
+
                     <button
                       onClick={() => {
-                        const url = getDemoUrl();
-                        navigator.clipboard.writeText(url);
-                        toast({ title: "Link Personalizado Copiado!", description: url });
+                        const prompt = generateLovablePrompt();
+                        navigator.clipboard.writeText(prompt);
+                        toast({ title: "Prompt IA Copiado!", description: "Cole no OpenUI/bolt.diy para gerar a aplicação." });
                       }}
-                      className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-xl border border-zinc-700 transition-all flex items-center gap-1"
+                      className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-white font-bold text-xs rounded-xl border border-purple-500/40 transition-all flex items-center gap-1"
                     >
-                      📋 Copiar Link
+                      📋 Copiar Prompt
                     </button>
 
                     <a
-                      href={getDemoUrl()}
+                      href={`/demo/${companySlug}?id=${lead.id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
@@ -336,7 +401,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
                       rel="noreferrer"
                       className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
                     >
-                      🛠️ Builder (Webstudio)
+                      🛠️ Builder (IA)
                     </a>
                     <a
                       href="https://design.hljdev.com.br"
