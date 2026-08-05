@@ -154,6 +154,8 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     window.open(`https://wa.me/${finalPhone}`, '_blank');
   };
 
+  const googleMapsUrl = lead.google_maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.empresa || lead.nome} ${lead.endereco || ''}`)}`;
+
   return (
     <>
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-zinc-950/98 border-l border-zinc-800 backdrop-blur-2xl shadow-2xl flex flex-col transition-all">
@@ -175,22 +177,24 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
                   <p className="text-zinc-400 text-xs font-bold mt-0.5">{lead.empresa}</p>
                 )}
 
-                {/* Rating Google Maps */}
-                {lead.rating && (
-                  <div className="flex items-center gap-1.5 mt-1.5">
+                {/* Rating Google Maps + Link direto */}
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  {lead.rating && (
                     <div className="flex items-center text-amber-400 text-xs font-bold gap-1">
                       <Star size={12} className="fill-amber-400" /> {lead.rating}
+                      {lead.user_ratings_total && <span className="text-[10px] text-zinc-500 font-medium">({lead.user_ratings_total} avaliações)</span>}
                     </div>
-                    {lead.user_ratings_total && (
-                      <span className="text-[10px] text-zinc-500 font-medium">({lead.user_ratings_total} avaliações no Google)</span>
-                    )}
-                    {lead.google_maps_url && (
-                      <a href={lead.google_maps_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-[10px] font-bold flex items-center gap-0.5 ml-1">
-                        Maps <ExternalLink size={10} />
-                      </a>
-                    )}
-                  </div>
-                )}
+                  )}
+
+                  <a 
+                    href={googleMapsUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="px-2 py-0.5 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
+                  >
+                    <MapPin size={10} /> Google Maps <ExternalLink size={10} />
+                  </a>
+                </div>
 
                 {/* Badges Neon estilo LeadSite */}
                 <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
@@ -256,8 +260,19 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           {/* TAB 1: VISÃO GERAL */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-3">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Informações de Contato</h4>
+              <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Informações de Contato</h4>
+                  <a
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                  >
+                    <MapPin size={12} /> Abrir no Google Maps <ExternalLink size={10} />
+                  </a>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   {lead.telefone && (
                     <div className="flex items-center gap-2 text-zinc-300">
