@@ -144,6 +144,7 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
 
     try {
       const { data: campaign, error: campErr } = await supabase.from("campanhas_maps").insert({
+        name: `${activeNiche} em ${activeLocation}`,
         keyword: activeNiche,
         location: activeLocation,
         status: "running"
