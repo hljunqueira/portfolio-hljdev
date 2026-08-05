@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "type": "http",
+      "url": "https://n8n.hljdev.com.br/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZTE0YTU5NC1hYTRhLTRhZjItOWVlOS04M2ViY2U0NjRjZmUiLCJpc3OiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjZhOGVlNzE4LThjNWQtNGExMS04ZjljLWQ3ZTk4NTdkMWI2ZSIsImlhdCI6MTc4NTk1NDQ0NX0.YwGiIKXJF2LFzC-Ln5IcJZSxSeJSF23sa32aSwbzEvc"
+      }
+    }
+  }
+}
