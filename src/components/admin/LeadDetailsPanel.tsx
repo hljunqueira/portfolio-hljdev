@@ -154,6 +154,11 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     window.open(`https://wa.me/${finalPhone}`, '_blank');
   };
 
+  const googleMapsUrl = lead.google_maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.empresa || lead.nome} ${lead.endereco || ''}`)}`;
+  const googleReviewsUrl = (lead as any).place_id 
+    ? `https://search.google.com/local/reviews?placeid=${(lead as any).place_id}`
+    : googleMapsUrl;
+
   const [selectedDemoType, setSelectedDemoType] = useState<string>("auto");
 
   const companySlug = (lead.empresa || lead.nome)

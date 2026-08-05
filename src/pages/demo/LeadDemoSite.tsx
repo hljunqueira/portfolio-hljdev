@@ -42,8 +42,8 @@ function sanitizeCompanyName(rawName: string): { cleanName: string; taglines: st
 }
 
 // Gerador de Conteúdo Personalizado por Nicho Comercial
-function getNicheConfig(rawName: string, categories: string[] = []) {
-  const text = (rawName + " " + categories.join(" ")).toLowerCase();
+function getNicheConfig(rawName: string, categories: string[] = [], forcedNiche?: string) {
+  const text = (forcedNiche || rawName + " " + categories.join(" ")).toLowerCase();
 
   if (text.includes("dentista") || text.includes("odontos") || text.includes("ortodon") || text.includes("sorriso")) {
     return {
@@ -191,8 +191,9 @@ export default function LeadDemoSite() {
     );
   }
 
+  const forcedType = searchParams.get("type") || searchParams.get("niche") || undefined;
   const { cleanName, taglines } = sanitizeCompanyName(lead.empresa || lead.nome);
-  const nicheConfig = getNicheConfig(lead.nome, lead.categorias || []);
+  const nicheConfig = getNicheConfig(lead.nome, lead.categorias || [], forcedType);
 
   const rating = lead.rating || 5.0;
   const totalReviews = lead.user_ratings_total || 14;

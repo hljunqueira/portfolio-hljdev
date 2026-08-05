@@ -1,0 +1,78 @@
+{
+  "name": "06 - HLJ Extração Maps & Webstudio Demo Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hlj-extracao-maps",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook Extração Maps",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/place/textsearch/json",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "query",
+              "value": "={{ $json.body.keyword }} em {{ $json.body.location }}"
+            }
+          ]
+        }
+      },
+      "name": "Google Places API Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.leads (nome, empresa, endereco, rating, user_ratings_total, origem, status, website)\nVALUES ($1, $1, $2, $3, $4, 'Prospecção Maps', 'novo', $5)\nON CONFLICT DO NOTHING;"
+      },
+      "name": "Salvar Lead no Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        710,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Extração Maps": {
+      "main": [
+        [
+          {
+            "node": "Google Places API Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Places API Search": {
+      "main": [
+        [
+          {
+            "node": "Salvar Lead no Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

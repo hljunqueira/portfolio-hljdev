@@ -13,12 +13,15 @@ This skill file documents the architecture and roadmap to orchestrate the high-c
 - **`hljdev.com.br`** → Main Frontend (React Portfolio + Admin) on **Vercel**
 - **`n8n.hljdev.com.br`** → N8N on VPS port `3012`
 - **`db.hljdev.com.br`** → Supabase Studio on VPS port `3013`
+- **`builder.hljdev.com.br`** → Webstudio Builder (Framer/Webflow style) on VPS port `3080`
+- **`design.hljdev.com.br`** → Penpot Studio (Figma style) on VPS port `9001`
 
 ### Services (Elite Rebranding)
 1. **Frontend + Admin (Vercel)**: Focus on high-converting sales for **Sites & Sistemas**. Admin at `/admin`.
-2. **N8N (VPS Docker)**: Serverless backend for all business logic and AI orchestration.
+2. **N8N (VPS Docker)**: Serverless backend for all business logic, Google Maps extraction, and AI orchestration.
 3. **Supabase (VPS Docker)**: Postgres DB + Auth + CRM storage.
 4. **Evolution API (VPS Docker)**: WhatsApp API for real-time customer engagement.
+5. **Webstudio & Penpot (VPS Docker)**: Automated website and UI prototype generation.
 
 ## 🛠️ Admin Dashboard Screens
 
