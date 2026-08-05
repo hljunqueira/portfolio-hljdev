@@ -383,31 +383,35 @@ Diretrizes Visuais & UX:
                       📋 Copiar Prompt
                     </button>
 
-                    <a
-                      href={`/demo/${companySlug}?id=${lead.id}&type=${selectedProjectType}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
+                    <button
+                      onClick={() => {
+                        const prompt = generateLovablePrompt();
+                        navigator.clipboard.writeText(prompt);
+                        toast({ title: "Prompt Bolt/Lovable Copiado! ⚡", description: "Abrindo o Builder (bolt.diy)... Cole no campo de prompt!" });
+                        const targetUrl = `https://builder.hljdev.com.br?prompt=${encodeURIComponent(prompt)}`;
+                        window.open(targetUrl, '_blank');
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
                     >
-                      Ver Demo <ExternalLink size={12} />
-                    </a>
+                      <Sparkles size={14} /> GERAR NO BOLT.DIY <ExternalLink size={12} />
+                    </button>
                   </div>
 
                   {/* Links Diretos para Webstudio e Penpot no VPS */}
                   <div className="flex items-center gap-1.5">
                     <a
-                      href="https://builder.hljdev.com.br"
+                      href={`https://builder.hljdev.com.br?prompt=${encodeURIComponent(generateLovablePrompt())}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
+                      className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
                     >
-                      🛠️ Builder (IA)
+                      🛠️ Builder (bolt.diy)
                     </a>
                     <a
                       href="https://design.hljdev.com.br"
                       target="_blank"
                       rel="noreferrer"
-                      className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
+                      className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
                     >
                       🎨 Design (Penpot)
                     </a>
@@ -582,14 +586,17 @@ Diretrizes Visuais & UX:
             <MessageCircle size={16} /> WhatsApp
           </Button>
 
-          <a
-            href={`/demo/${companySlug}?id=${lead.id}&type=${selectedProjectType}`}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            onClick={() => {
+              const prompt = generateLovablePrompt();
+              navigator.clipboard.writeText(prompt);
+              toast({ title: "Prompt Bolt/Lovable Copiado! ⚡", description: "Abrindo o Builder (bolt.diy)... Cole no campo de prompt!" });
+              window.open(`https://builder.hljdev.com.br?prompt=${encodeURIComponent(prompt)}`, '_blank');
+            }}
             className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs py-3 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20"
           >
-            <Sparkles size={16} /> Demo IA
-          </a>
+            <Sparkles size={16} /> DEMO BOLT (IA)
+          </button>
 
           <Button
             onClick={() => setIsObjectionModalOpen(true)}
