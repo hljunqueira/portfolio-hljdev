@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, Phone, Star, Globe, Map as MapIcon, 
   GripVertical, Trash2, Calendar, Instagram, 
-  Filter, Search, LayoutGrid, Download 
+  Filter, Search, LayoutGrid, Download, Sparkles, MessageCircle, ArrowRight, ShieldCheck, List, Table
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { LeadDetailsPanel } from "@/components/admin/LeadDetailsPanel";
+import { MapsProspeccionModal } from "@/components/admin/MapsProspeccionModal";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -42,6 +43,9 @@ const AdminPipeline = () => {
   const [selectedLead, setSelectedLead] = useState<any | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const [filterOrigin, setFilterOrigin] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban");
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [isMapsModalOpen, setIsMapsModalOpen] = useState(false);
 
   const { data: leads = [], isLoading: loading } = useQuery({
     queryKey: ['pipeline-leads'],
@@ -55,7 +59,6 @@ const AdminPipeline = () => {
       return { id, status };
     },
     onMutate: async ({ id, status }) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ['pipeline-leads'] });
       const prev = queryClient.getQueryData<any[]>(['pipeline-leads']);
       queryClient.setQueryData<any[]>(['pipeline-leads'], old =>
@@ -69,16 +72,7 @@ const AdminPipeline = () => {
     },
     onSuccess: ({ id, status }) => {
       toast({ title: "Lead atualizado", description: `Movido para ${STATUS_COLS.find(c => c.key === status)?.label}` });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-leads'] }); // sync dashboard
-      if (status === "fechado") {
-        const lead = (queryClient.getQueryData<any[]>(['pipeline-leads']) ?? []).find(l => l.id === id);
-        if (lead) {
-          supabase.from("projetos").insert({ cliente_nome: lead.nome, lead_id: lead.id, status: "briefing" })
-            .then(({ error }) => {
-              if (!error) toast({ title: "🚀 Projeto Iniciado!", description: `Projeto para ${lead.nome} criado automaticamente.` });
-            });
-        }
-      }
+      queryClient.invalidateQueries({ queryKey: ['dashboard-leads'] });
     },
   });
 
@@ -93,14 +87,22 @@ const AdminPipeline = () => {
       queryClient.setQueryData<any[]>(['pipeline-leads'], old => (old ?? []).filter(l => l.id !== id));
       return { prev };
     },
-    onError: (_err, _vars, ctx) => {
-      queryClient.setQueryData(['pipeline-leads'], ctx?.prev);
-      toast({ title: "Erro ao excluir lead", variant: "destructive" });
-    },
     onSuccess: () => {
-      toast({ title: "Lead excluído", description: "Removido com sucesso." });
+      toast({ title: "Lead excluído" });
       queryClient.invalidateQueries({ queryKey: ['dashboard-leads'] });
     },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("leads").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: `${selectedLeadIds.length} leads excluídos com sucesso!` });
+      setSelectedLeadIds([]);
+      queryClient.invalidateQueries({ queryKey: ['pipeline-leads'] });
+    }
   });
 
   const onDragEnd = async (result: any) => {
@@ -120,183 +122,241 @@ const AdminPipeline = () => {
 
   const byStatus = (status: string) => filteredLeads.filter((l) => l.status === status);
 
-  const handleDeleteLead = (id: string) => {
-    deleteMutation.mutate(id);
-    setSelectedLead(null);
-    setLeadToDelete(null);
+  const toggleSelectAll = () => {
+    if (selectedLeadIds.length === filteredLeads.length) {
+      setSelectedLeadIds([]);
+    } else {
+      setSelectedLeadIds(filteredLeads.map(l => l.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedLeadIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   return (
     <>
-      <Helmet><title>HLJ DEV | Pipeline Leads</title></Helmet>
+      <Helmet><title>HLJ DEV | Pipeline CRM LeadSite</title></Helmet>
       <div className="p-6 md:p-10 space-y-8 max-w-[1800px] mx-auto min-h-screen relative overflow-hidden">
+        {/* Header Superior estilo LeadSite */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-primary/60 text-xs mb-1 uppercase tracking-[0.3em] font-black">
-              <Users className="h-3 w-3" /> Gestão de Funil
+              <Users className="h-3 w-3" /> Gestão de Funil & Prospeção
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase">
-              Pipeline <span className="text-primary">CRM</span>
+              Pipeline <span className="text-primary">LeadSite</span>
             </h1>
             <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">
-              {filteredLeads.length} leads {filterOrigin !== 'all' ? `de ${filterOrigin}` : ''} no fluxo
+              {filteredLeads.length} leads qualificados no fluxo
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                if (filteredLeads.length === 0) return;
-                const csvData = filteredLeads.map(l => ({
-                  Nome: l.nome,
-                  Email: l.email || "",
-                  Telefone: l.telefone || l.whatsapp || "",
-                  Empresa: l.empresa || "",
-                  Tipo: l.tipo || "",
-                  Status: l.status,
-                  Origem: l.origem || "",
-                  Score: l.lead_score,
-                  Data: new Date(l.created_at).toLocaleDateString('pt-BR')
-                }));
-                
-                const headers = Object.keys(csvData[0]).join(';');
-                const rows = csvData.map(row => Object.values(row).join(';'));
-                const csvContent = "\uFEFF" + [headers, ...rows].join('\n');
-                
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.setAttribute("href", url);
-                link.setAttribute("download", `leads_hljdev_${new Date().toISOString().split('T')[0]}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}
-              className="h-12 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-all gap-2"
-            >
-              <Download size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Exportar CSV</span>
-            </Button>
-
-            {/* Filtros de Origem */}
-            <div className="flex items-center bg-zinc-900/50 border border-zinc-800 p-1.5 rounded-2xl gap-1">
-              <button 
-                onClick={() => setFilterOrigin('all')}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'all' ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Seletor de Modo: Kanban vs Tabela */}
+            <div className="flex items-center bg-zinc-900/80 border border-zinc-800 p-1.5 rounded-2xl gap-1">
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === "kanban" ? "bg-primary text-black" : "text-zinc-400 hover:text-white"
+                }`}
               >
-                Todos
+                <LayoutGrid size={14} /> Kanban
               </button>
-              <button 
-                onClick={() => setFilterOrigin('maps')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'maps' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              <button
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === "table" ? "bg-primary text-black" : "text-zinc-400 hover:text-white"
+                }`}
               >
-                <MapIcon size={12} /> Campanha
-              </button>
-              <button 
-                onClick={() => setFilterOrigin('site')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'site' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-              >
-                <Globe size={12} /> Site
-              </button>
-              <button 
-                onClick={() => setFilterOrigin('instagram')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterOrigin === 'instagram' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-              >
-                <Instagram size={12} /> Instagram
+                <Table size={14} /> Tabela
               </button>
             </div>
+
+            {/* Nova Extração Google Maps */}
+            <Button
+              onClick={() => setIsMapsModalOpen(true)}
+              className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest transition-all gap-2 shadow-lg shadow-blue-600/20"
+            >
+              <Sparkles size={16} />
+              <span>⚡ Extração Maps</span>
+            </Button>
           </div>
         </header>
 
+        {/* Ações em Massa Bar (Bulk Actions) */}
+        {selectedLeadIds.length > 0 && (
+          <div className="bg-blue-600/20 border border-blue-500/40 p-4 rounded-2xl flex items-center justify-between">
+            <span className="text-xs font-black text-blue-300 uppercase tracking-wider">
+              {selectedLeadIds.length} lead(s) selecionado(s)
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => bulkDeleteMutation.mutate(selectedLeadIds)}
+                disabled={bulkDeleteMutation.isPending}
+                className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-4 py-2 rounded-xl"
+              >
+                <Trash2 size={14} className="mr-1" /> Excluir Selecionados
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo Principal: Modo Kanban ou Modo Tabela */}
         {loading ? (
           <div className="flex items-center gap-3 text-primary animate-pulse font-black uppercase text-xs tracking-widest">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             Sincronizando Leads...
           </div>
+        ) : viewMode === "table" ? (
+          /* MODO TABELA (Estilo LeadSite Table View) */
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black uppercase text-zinc-500 tracking-widest">
+                  <tr>
+                    <th className="p-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 accent-primary rounded cursor-pointer"
+                      />
+                    </th>
+                    <th className="p-4">Lead / Empresa</th>
+                    <th className="p-4">Contatos (WhatsApp)</th>
+                    <th className="p-4">Origem / Status</th>
+                    <th className="p-4">Score</th>
+                    <th className="p-4 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900">
+                  {filteredLeads.map((lead) => {
+                    const score = lead.lead_score ?? lead.score ?? 0;
+                    const isSelected = selectedLeadIds.includes(lead.id);
+
+                    return (
+                      <tr key={lead.id} className={`hover:bg-zinc-900/30 transition-colors ${isSelected ? "bg-blue-500/10" : ""}`}>
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectOne(lead.id)}
+                            className="w-4 h-4 accent-primary rounded cursor-pointer"
+                          />
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-white text-sm">{lead.nome}</div>
+                          {lead.empresa && <div className="text-[10px] text-zinc-500">{lead.empresa}</div>}
+                        </td>
+                        <td className="p-4">
+                          <div className="text-zinc-300 font-bold">{lead.whatsapp || lead.telefone || 'N/A'}</div>
+                          {lead.email && <div className="text-[10px] text-zinc-500">{lead.email}</div>}
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-zinc-900 text-zinc-400 border border-zinc-800 mr-2">
+                            {lead.origem || 'Google Maps'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary">
+                            {lead.status}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                            score >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-zinc-800 text-zinc-400"
+                          }`}>
+                            {score} pts
+                          </span>
+                        </td>
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => setSelectedLead(lead)}
+                            className="px-3 py-1.5 bg-zinc-800 hover:bg-primary hover:text-black text-zinc-300 font-bold rounded-xl text-xs transition-all"
+                          >
+                            Abrir Gaveta
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : (
+          /* MODO KANBAN */
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-6 overflow-x-auto pb-8 snap-x min-h-[70vh]">
               {STATUS_COLS.map(({ key, label, color, textColor }) => (
-                <div key={key} className={`min-w-[320px] flex flex-col snap-start`}>
-                  <div className={`flex items-center justify-between mb-4 p-4 rounded-2xl border ${color} backdrop-blur-sm sticky top-0 z-10`}>
-                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${textColor}`}>{label}</span>
-                    <span className="text-[10px] bg-white/5 px-2.5 py-1 rounded-lg text-white font-bold">{byStatus(key).length}</span>
+                <div key={key} className="flex-1 min-w-[320px] max-w-[380px] snap-start flex flex-col">
+                  <div className={`p-4 rounded-2xl border ${color} flex items-center justify-between mb-4 backdrop-blur-md`}>
+                    <span className={`text-xs font-black uppercase tracking-wider ${textColor}`}>{label}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">
+                      {byStatus(key).length}
+                    </span>
                   </div>
-                  
+
                   <Droppable droppableId={key}>
                     {(provided, snapshot) => (
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
-                        className={`space-y-3 flex-1 rounded-2xl transition-colors duration-200 p-2 ${
-                          snapshot.isDraggingOver ? "bg-white/[0.03]" : ""
+                        className={`flex-1 rounded-3xl p-2 transition-colors space-y-3 ${
+                          snapshot.isDraggingOver ? "bg-zinc-900/40 border border-dashed border-zinc-800" : ""
                         }`}
                       >
-                        {byStatus(key).length === 0 && !snapshot.isDraggingOver ? (
-                          <div className="text-center py-12 border border-dashed border-zinc-900 rounded-3xl opacity-30">
-                            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest italic">Sem Leads</p>
-                          </div>
-                        ) : (
-                          byStatus(key).map((lead, index) => (
+                        {byStatus(key).map((lead, index) => {
+                          const score = lead.lead_score ?? lead.score ?? 0;
+                          const isNoWebsite = !lead.website || lead.website.trim() === "";
+
+                          return (
                             <Draggable key={lead.id} draggableId={lead.id} index={index}>
                               {(provided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  onClick={() => setSelectedLead(lead)}
-                                  className={`bg-zinc-900/60 border ${
-                                    snapshot.isDragging ? "border-primary shadow-2xl shadow-primary/20" : "border-zinc-800"
-                                  } rounded-2xl p-5 hover:border-zinc-600 transition-all cursor-pointer group relative overflow-hidden`}
-                                  style={{
-                                    ...provided.draggableProps.style,
-                                  }}
+                                  className={`bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-4 transition-all group relative ${
+                                    snapshot.isDragging ? "shadow-2xl shadow-primary/20 ring-2 ring-primary bg-zinc-900" : ""
+                                  }`}
                                 >
-                                  <div className="flex items-start justify-between gap-2 mb-3">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <GripVertical className="h-3 w-3 text-zinc-700 group-hover:text-zinc-500 shrink-0" />
-                                      <h3 className="text-xs font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors truncate">{lead.nome}</h3>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div {...provided.dragHandleProps} className="text-zinc-600 hover:text-zinc-400 cursor-grab p-1">
+                                      <GripVertical size={14} />
                                     </div>
-                                    {lead.lead_score != null && (
-                                      <span className="text-[9px] font-black text-primary flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded">
-                                        <Star className="h-2.5 w-2.5 fill-current" />{lead.lead_score}
+                                    <div className="flex items-center gap-1.5">
+                                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                                        score >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40" : "bg-zinc-800 text-zinc-400"
+                                      }`}>
+                                        {score} pts
                                       </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-2 mb-4">
-                                    {lead.origem?.toLowerCase().includes('maps') || lead.origem?.toLowerCase().includes('extração') ? (
-                                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[8px] font-black uppercase tracking-widest border border-amber-500/10">
-                                        <MapIcon className="h-2 w-2" /> Campanha
-                                      </span>
-                                    ) : lead.origem?.toLowerCase().includes('instagram') ? (
-                                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-pink-500/10 text-pink-400 text-[8px] font-black uppercase tracking-widest border border-pink-500/10">
-                                        <Instagram className="h-2 w-2" /> Instagram
-                                      </span>
-                                    ) : (
-                                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[8px] font-black uppercase tracking-widest border border-blue-500/10">
-                                        <Globe className="h-2 w-2" /> Site HLJ DEV
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-800/50">
-                                    <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-                                      {new Date(lead.created_at).toLocaleDateString("pt-BR")}
-                                    </span>
-                                    <div className="flex items-center gap-3">
-                                      {lead.whatsapp && (
-                                        <Phone className="h-3 w-3 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                      {isNoWebsite && (
+                                        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-red-500/20 text-red-400">
+                                          Sem Site
+                                        </span>
                                       )}
-                                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
                                     </div>
+                                  </div>
+
+                                  <h4 className="text-white font-black text-sm group-hover:text-primary transition-colors">
+                                    {lead.nome}
+                                  </h4>
+
+                                  <div className="flex items-center justify-between pt-3 border-t border-zinc-800/60 mt-3">
+                                    <span className="text-[9px] text-zinc-500 font-bold uppercase">{lead.origem || 'Maps'}</span>
+                                    <button
+                                      onClick={() => setSelectedLead(lead)}
+                                      className="px-2.5 py-1 bg-zinc-800 hover:bg-primary hover:text-black text-zinc-300 text-[10px] font-bold rounded-lg transition-all"
+                                    >
+                                      Gaveta <ArrowRight size={10} className="inline ml-0.5" />
+                                    </button>
                                   </div>
                                 </div>
                               )}
                             </Draggable>
-                          ))
-                        )}
+                          );
+                        })}
                         {provided.placeholder}
                       </div>
                     )}
@@ -306,56 +366,23 @@ const AdminPipeline = () => {
             </div>
           </DragDropContext>
         )}
-
-        {/* Lead Details Drawer */}
-        <AnimatePresence>
-          {selectedLead && (
-            <div className="fixed inset-0 z-50 flex justify-end">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setSelectedLead(null)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              />
-              <LeadDetailsPanel 
-                lead={selectedLead}
-                onClose={() => setSelectedLead(null)}
-                onAction={(action) => {
-                  if (action === 'delete') {
-                    setLeadToDelete(selectedLead.id);
-                  }
-                }}
-              />
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Delete Confirmation Modal */}
-        <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
-          <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-red-900/10 backdrop-blur-xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="font-black uppercase tracking-tighter text-xl">Confirmar Exclusão</AlertDialogTitle>
-              <AlertDialogDescription className="text-zinc-400 font-medium">
-                Tem certeza que deseja excluir permanentemente este lead? Esta ação não poderá ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel className="bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-black rounded-xl">Cancelar</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={() => {
-                  if (leadToDelete) handleDeleteLead(leadToDelete);
-                  setLeadToDelete(null);
-                  setSelectedLead(null);
-                }}
-                className="bg-red-500 hover:bg-red-600 text-white uppercase tracking-widest text-[10px] font-black rounded-xl"
-              >
-                Sim, Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      <MapsProspeccionModal
+        isOpen={isMapsModalOpen}
+        onClose={() => setIsMapsModalOpen(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['pipeline-leads'] })}
+      />
+
+      {selectedLead && (
+        <LeadDetailsPanel
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onAction={(action, lead) => {
+            if (action === "delete") setLeadToDelete(lead.id);
+          }}
+        />
+      )}
     </>
   );
 };

@@ -37,34 +37,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { MapsProspeccionModal } from "@/components/admin/MapsProspeccionModal";
+
 interface Campaign {
   id: string;
-  name: string;
+  name?: string;
   keyword: string;
   location: string;
-  status: "idle" | "running" | "completed" | "error" | "queued";
-  leads_found: number;
-  dispatches_sent: number;
-  last_run?: string;
+  status: string;
+  total_encontrados?: number;
+  validados_whatsapp?: number;
   created_at: string;
 }
 
 const AdminCampaigns = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pendingCount, setPendingCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
-
-  // Form State
-  const [newCampaign, setNewCampaign] = useState({
-    name: "",
-    keyword: "",
-    location: ""
-  });
-
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
   const fetchCampaigns = async () => {
     setLoading(true);

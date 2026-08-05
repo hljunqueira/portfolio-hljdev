@@ -3,7 +3,7 @@ import {
   X, Phone, Mail, Instagram, MessageCircle, 
   MapPin, Calendar, Star, Building2, ExternalLink,
   CheckCircle2, Trash2, Globe, TrendingUp, Clock, DollarSign,
-  Target, FileText, Loader2, Sparkles, Send, Activity, ShieldCheck
+  Target, FileText, Loader2, Sparkles, Send, Activity, ShieldCheck, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,54 +143,95 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     }
   };
 
+  const handleOpenWhatsAppDirect = () => {
+    const phone = lead.whatsapp || lead.telefone;
+    if (!phone) {
+      toast({ title: "Sem número de WhatsApp", variant: "destructive" });
+      return;
+    }
+    const clean = phone.replace(/\D/g, '');
+    const finalPhone = clean.length <= 11 ? `55${clean}` : clean;
+    window.open(`https://wa.me/${finalPhone}`, '_blank');
+  };
+
   return (
     <>
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-zinc-950/95 border-l border-zinc-800 backdrop-blur-2xl shadow-2xl flex flex-col transition-all">
-        {/* Header Drawer */}
-        <div className="p-6 border-b border-zinc-900 flex items-center justify-between bg-zinc-900/30">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-primary shrink-0">
-              <Building2 size={24} />
-            </div>
-            <div>
-              <h2 className="text-white font-black text-base tracking-tight leading-tight">{lead.nome}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                {/* Score Badge Neon */}
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                  finalScore >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40 shadow-[0_0_10px_rgba(34,197,94,0.3)]" :
-                  finalScore >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" :
-                  "bg-red-500/20 text-red-400 border border-red-500/40"
-                }`}>
-                  Score {finalScore} pts
-                </span>
-
-                {/* Badge Vácuo Digital */}
-                {isNoWebsite && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30">
-                    Vácuo Digital (Sem Site)
-                  </span>
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-zinc-950/98 border-l border-zinc-800 backdrop-blur-2xl shadow-2xl flex flex-col transition-all">
+        
+        {/* Header Perfil do Lead (LeadSite Profile Style) */}
+        <div className="p-6 border-b border-zinc-900 bg-zinc-900/40 relative">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              {lead.foto_url ? (
+                <img src={lead.foto_url} alt={lead.nome} className="w-14 h-14 rounded-2xl object-cover border border-zinc-800 shrink-0" />
+              ) : (
+                <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-primary shrink-0">
+                  <Building2 size={28} />
+                </div>
+              )}
+              <div>
+                <h2 className="text-white font-black text-lg tracking-tight leading-tight">{lead.nome}</h2>
+                {lead.empresa && lead.empresa !== lead.nome && (
+                  <p className="text-zinc-400 text-xs font-bold mt-0.5">{lead.empresa}</p>
                 )}
 
-                {/* Badge NF-e */}
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                  <ShieldCheck size={10} /> Garantia NF-e
-                </span>
+                {/* Rating Google Maps */}
+                {lead.rating && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <div className="flex items-center text-amber-400 text-xs font-bold gap-1">
+                      <Star size={12} className="fill-amber-400" /> {lead.rating}
+                    </div>
+                    {lead.user_ratings_total && (
+                      <span className="text-[10px] text-zinc-500 font-medium">({lead.user_ratings_total} avaliações no Google)</span>
+                    )}
+                    {lead.google_maps_url && (
+                      <a href={lead.google_maps_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline text-[10px] font-bold flex items-center gap-0.5 ml-1">
+                        Maps <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Badges Neon estilo LeadSite */}
+                <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                    finalScore >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40 shadow-[0_0_10px_rgba(34,197,94,0.3)]" :
+                    finalScore >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" :
+                    "bg-red-500/20 text-red-400 border border-red-500/40"
+                  }`}>
+                    Score {finalScore} pts
+                  </span>
+
+                  {isNoWebsite ? (
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30">
+                      Vácuo Digital (Sem Site)
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                      Com Site
+                    </span>
+                  )}
+
+                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                    <ShieldCheck size={10} /> Garantia NF-e
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-xl hover:bg-zinc-900 transition-all">
-            <X size={20} />
-          </button>
+            <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-xl hover:bg-zinc-900 transition-all">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        {/* Navigation Tabs (Estilo LeadSite) */}
+        {/* Navigation Tabs estilo LeadSite */}
         <div className="flex border-b border-zinc-900 bg-zinc-950 px-6 pt-2">
           {[
-            { id: 'info', label: 'Informações', icon: Building2 },
-            { id: 'timeline', label: 'Timeline', icon: Activity },
+            { id: 'info', label: 'Visão Geral', icon: Building2 },
             { id: 'proposta', label: 'Proposta & ROI', icon: FileText },
-            { id: 'objecoes', label: 'Tratar Objeções', icon: Sparkles }
+            { id: 'objecoes', label: 'Tratar Objeções', icon: Sparkles },
+            { id: 'timeline', label: 'Timeline', icon: Activity }
           ].map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -198,7 +239,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+                className={`flex items-center gap-2 px-3.5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
                   active
                     ? "border-primary text-primary bg-primary/5"
                     : "border-transparent text-zinc-500 hover:text-zinc-300"
@@ -212,12 +253,11 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
 
         {/* Drawer Body Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* TAB 1: INFO */}
+          {/* TAB 1: VISÃO GERAL */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              {/* Contatos */}
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-3">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Contatos do Lead</h4>
+                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Informações de Contato</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   {lead.telefone && (
                     <div className="flex items-center gap-2 text-zinc-300">
@@ -274,32 +314,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
             </div>
           )}
 
-          {/* TAB 2: TIMELINE */}
-          {activeTab === 'timeline' && (
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Linha do Tempo de Atividades</h4>
-              {isLoadingTimeline ? (
-                <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
-              ) : timelineEvents.length === 0 ? (
-                <div className="text-center p-8 text-zinc-600 text-xs font-bold">Nenhuma atividade registrada ainda.</div>
-              ) : (
-                <div className="relative pl-6 border-l border-zinc-800 space-y-6">
-                  {timelineEvents.map((evt: any) => (
-                    <div key={evt.id} className="relative">
-                      <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-zinc-900 border-2 border-primary" />
-                      <div className="bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-800/60 space-y-1">
-                        <span className="text-[10px] font-black uppercase text-primary tracking-wider">{evt.tipo.replace('_', ' ')}</span>
-                        <p className="text-xs text-zinc-300 font-medium">{evt.descricao}</p>
-                        <span className="text-[9px] text-zinc-600 block">{new Date(evt.created_at).toLocaleString("pt-BR")}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: PROPOSTA & ROI */}
+          {/* TAB 2: PROPOSTA & ROI */}
           {activeTab === 'proposta' && (
             <div className="space-y-6">
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 space-y-4">
@@ -341,7 +356,7 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
             </div>
           )}
 
-          {/* TAB 4: OBJEÇÕES */}
+          {/* TAB 3: OBJEÇÕES */}
           {activeTab === 'objecoes' && (
             <div className="space-y-6">
               <div className="bg-purple-950/20 border border-purple-800/40 rounded-2xl p-6 text-center space-y-4">
@@ -361,6 +376,64 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
               </div>
             </div>
           )}
+
+          {/* TAB 4: TIMELINE */}
+          {activeTab === 'timeline' && (
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Linha do Tempo de Atividades</h4>
+              {isLoadingTimeline ? (
+                <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
+              ) : timelineEvents.length === 0 ? (
+                <div className="text-center p-8 text-zinc-600 text-xs font-bold">Nenhuma atividade registrada ainda.</div>
+              ) : (
+                <div className="relative pl-6 border-l border-zinc-800 space-y-6">
+                  {timelineEvents.map((evt: any) => (
+                    <div key={evt.id} className="relative">
+                      <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-zinc-900 border-2 border-primary" />
+                      <div className="bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-800/60 space-y-1">
+                        <span className="text-[10px] font-black uppercase text-primary tracking-wider">{evt.tipo.replace('_', ' ')}</span>
+                        <p className="text-xs text-zinc-300 font-medium">{evt.descricao}</p>
+                        <span className="text-[9px] text-zinc-600 block">{new Date(evt.created_at).toLocaleString("pt-BR")}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Rodapé Fixo de Ações Rápidas (Estilo LeadSite Quick Action Bar) */}
+        <div className="p-4 border-t border-zinc-900 bg-zinc-950 flex items-center gap-2">
+          <Button
+            onClick={handleOpenWhatsAppDirect}
+            className="flex-1 bg-green-500 hover:bg-green-400 text-black font-black uppercase text-xs tracking-wider py-3 rounded-xl flex items-center justify-center gap-1.5"
+          >
+            <MessageCircle size={16} /> WhatsApp
+          </Button>
+
+          <Button
+            onClick={() => setIsObjectionModalOpen(true)}
+            className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs py-3 px-4 rounded-xl flex items-center gap-1.5"
+          >
+            <Sparkles size={16} /> Objeção
+          </Button>
+
+          <Button
+            onClick={() => generateAndDownload(lead as any, selectedService)}
+            disabled={isGenerating}
+            className="bg-primary text-black font-black uppercase text-xs py-3 px-4 rounded-xl flex items-center gap-1.5"
+          >
+            <FileText size={16} /> PDF
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => onAction("delete", lead)}
+            className="text-zinc-500 hover:text-red-400 p-3 hover:bg-zinc-900 rounded-xl"
+          >
+            <Trash2 size={16} />
+          </Button>
         </div>
       </div>
 
