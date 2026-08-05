@@ -3,8 +3,21 @@ import { Map, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LeadsMap } from "@/components/admin/LeadsMap";
 import AdminCampaigns from "./AdminCampaigns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+
+const fetchLeads = async () => {
+  const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+};
 
 const AdminMaps = () => {
+  const { data: leads = [] } = useQuery({
+    queryKey: ['admin-maps-leads'],
+    queryFn: fetchLeads,
+  });
+
   return (
     <>
       <Helmet><title>HLJ DEV | Mapas & Leads</title></Helmet>
@@ -36,7 +49,7 @@ const AdminMaps = () => {
 
         <div className="flex-1 min-h-0 relative">
           <TabsContent value="map" className="h-full bg-black mt-0 border-none outline-none data-[state=active]:flex flex-col">
-            <LeadsMap />
+            <LeadsMap leads={leads} />
           </TabsContent>
           
           <TabsContent value="campaigns" className="h-full bg-black mt-0 overflow-y-auto border-none outline-none">

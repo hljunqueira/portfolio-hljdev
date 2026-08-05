@@ -37,11 +37,11 @@ interface Lead {
 }
 
 interface LeadsMapProps {
-  leads: Lead[];
+  leads?: Lead[];
   onAction?: (action: string, lead: Lead) => void;
 }
 
-export function LeadsMap({ leads, onAction }: LeadsMapProps) {
+export function LeadsMap({ leads = [], onAction }: LeadsMapProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [filters, setFilters] = useState<FilterState>({
