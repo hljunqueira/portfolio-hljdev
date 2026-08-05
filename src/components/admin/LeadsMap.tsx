@@ -1,25 +1,12 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Users, Map as MapIcon, Star, Target, 
-  TrendingUp, Search, SlidersHorizontal, ChevronRight
-} from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
-import { KPIWidget } from "./KPIWidget";
-import { FilterPanel, FilterState } from "./FilterPanel";
-import { MapContainer } from "./MapContainer";
-import { LeadDetailsPanel } from "./LeadDetailsPanel";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Map as MapIcon, Star, Target, TrendingUp, ChevronRight 
+} from 'lucide-react';
+import MapContainer from './MapContainer';
+import FilterPanel from './FilterPanel';
+import KPIWidget from './KPIWidget';
+import { LeadDetailsPanel } from './LeadDetailsPanel';
 
 interface Lead {
   id: string;
@@ -28,7 +15,8 @@ interface Lead {
   telefone?: string;
   empresa?: string;
   tipo?: string;
-  lead_score: number;
+  lead_score?: number;
+  score?: number;
   latitude: number;
   longitude: number;
   endereco?: string;
@@ -43,62 +31,95 @@ interface Lead {
   business_status?: string;
   status: string;
   created_at: string;
+  origem?: string;
+  google_maps_url?: string;
+  reviews?: any[];
 }
 
-export function LeadsMap() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+interface LeadsMapProps {
+  leads: Lead[];
+  onAction?: (action: string, lead: Lead) => void;
+}
+
+export function LeadsMap({ leads, onAction }: LeadsMapProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [filters, setFilters] = useState<FilterState>({ search: "", status: [], minScore: 0 });
-
-  useEffect(() => {
-    const fetchLeads = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .not("latitude", "is", null)
-        .order("lead_score", { ascending: false });
-
-      if (!error && data) {
-        setLeads(data as Lead[]);
-      }
-      setLoading(false);
-    };
-
-    fetchLeads();
-  }, []);
-
-  const filteredLeads = leads.filter(lead => {
-    // Busca Inteligente (Nome ou Endereço)
-    const matchesSearch = filters.search === "" || 
-      lead.nome?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      lead.endereco?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(filters.search.toLowerCase());
-
-    // Status
-    const matchesStatus = filters.status.length === 0 || filters.status.includes(lead.status);
-
-    // Score
-    const matchesScore = lead.lead_score >= filters.minScore;
-
-    return matchesSearch && matchesStatus && matchesScore;
+  const [filters, setFilters] = useState<{
+    search: string;
+    status: string[];
+    minScore: number;
+    hasWebsite: string;
+  }>({
+    search: '',
+    status: [],
+    minScore: 0,
+    hasWebsite: 'all'
   });
 
+  // Dynamic Calculation from Real Database Records
+  const todayStr = new Date().toDateString();
+  const todayLeadsCount = leads.filter(l => {
+    if (!l.created_at) return false;
+    return new Date(l.created_at).toDateString() === todayStr;
+  }).length;
+
+  const closedLeadsCount = leads.filter(l => l.status === 'fechado').length;
+  const totalLeads = leads.length;
+
   const stats = {
-    total: leads.length,
-    avgScore: leads.length > 0 
-      ? Math.round(leads.reduce((acc, curr) => acc + curr.lead_score, 0) / leads.length)
+    total: totalLeads,
+    avgScore: totalLeads > 0 
+      ? Math.round(leads.reduce((acc, curr) => acc + (curr.lead_score ?? curr.score ?? 0), 0) / totalLeads)
       : 0,
-    topLeads: leads.filter(l => l.lead_score >= 80).length,
-    conversions: 12 // Mocked for now
+    topLeads: leads.filter(l => (l.lead_score ?? l.score ?? 0) >= 70).length,
+    todayLeads: todayLeadsCount,
+    conversionRate: totalLeads > 0 
+      ? Math.round((closedLeadsCount / totalLeads) * 100)
+      : 0
+  };
+
+  // Filter Leads Lógica
+  const filteredLeads = leads.filter(lead => {
+    const score = lead.lead_score ?? lead.score ?? 0;
+
+    // Search Filter
+    if (filters.search) {
+      const query = filters.search.toLowerCase();
+      const matchName = lead.nome.toLowerCase().includes(query);
+      const matchEmail = lead.email?.toLowerCase().includes(query) || false;
+      const matchEndereco = lead.endereco?.toLowerCase().includes(query) || false;
+      const matchEmpresa = lead.empresa?.toLowerCase().includes(query) || false;
+      if (!matchName && !matchEmail && !matchEndereco && !matchEmpresa) return false;
+    }
+
+    // Status Filter
+    if (filters.status.length > 0) {
+      if (!filters.status.includes(lead.status)) return false;
+    }
+
+    // Score Filter
+    if (score < filters.minScore) return false;
+
+    // Website Filter
+    if (filters.hasWebsite === 'yes' && (!lead.website || lead.website.trim() === '')) return false;
+    if (filters.hasWebsite === 'no' && (lead.website && lead.website.trim() !== '')) return false;
+
+    return true;
+  });
+
+  const handleMarkerClick = (lead: Lead) => {
+    setSelectedLead(lead);
+  };
+
+  const handleLeadAction = (action: string, lead: Lead) => {
+    if (onAction) {
+      onAction(action, lead);
+    }
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-      {/* KPI Section */}
+      {/* KPI Section - Dynamic Calculations */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-6 shrink-0 z-10 bg-black">
         <KPIWidget 
           title="Total de Leads no Mapa" 
@@ -117,11 +138,11 @@ export function LeadsMap() {
           value={stats.topLeads} 
           icon={Target} 
           color="text-red-400" 
-          trend="+2 hoje"
+          trend={stats.todayLeads > 0 ? `+${stats.todayLeads} HOJE` : undefined}
         />
         <KPIWidget 
           title="Taxa de Conversão" 
-          value="35%" 
+          value={`${stats.conversionRate}%`} 
           icon={TrendingUp} 
           color="text-emerald-400" 
         />
@@ -140,7 +161,7 @@ export function LeadsMap() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="w-80 h-full p-4"
+                className="w-80 h-full p-4 overflow-y-auto"
               >
                 <FilterPanel 
                   totalLeads={leads.length} 
@@ -159,70 +180,26 @@ export function LeadsMap() {
           </button>
         </motion.div>
 
-        {/* Map Area */}
-        <div className="flex-1 relative rounded-r-3xl overflow-hidden">
+        {/* Leaflet Google Maps View */}
+        <div className="flex-1 relative z-10">
           <MapContainer 
-            leads={filteredLeads} 
-            onLeadSelect={setSelectedLead}
+            leads={filteredLeads}
+            onMarkerClick={handleMarkerClick}
             selectedLeadId={selectedLead?.id}
           />
-          
-          {loading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-black text-white uppercase tracking-widest">Sincronizando com Supabase...</p>
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Lead Details Modal */}
-        <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
-          <DialogContent className="max-w-5xl p-0 bg-zinc-950 border-zinc-800 shadow-2xl overflow-hidden rounded-3xl h-[85vh] flex flex-col gap-0 !grid-cols-none">
-            {selectedLead && (
-              <LeadDetailsPanel 
-                lead={selectedLead} 
-                onClose={() => setSelectedLead(null)}
-                onAction={async (action, leadParam) => {
-                  if (action === 'delete') {
-                    setLeadToDelete(leadParam);
-                  }
-                }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Lead AlertDialog */}
-        <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
-          <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-red-900/10 backdrop-blur-xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="font-black uppercase tracking-tighter text-xl">Excluir Lead</AlertDialogTitle>
-              <AlertDialogDescription className="text-zinc-400 font-medium">
-                Tem certeza que deseja excluir permanentemente <span className="text-white font-bold">{leadToDelete?.nome}</span>? Esta ação não poderá ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel className="bg-zinc-900 hover:bg-zinc-800 text-white border-none uppercase tracking-widest text-[10px] font-black rounded-xl">Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  if (!leadToDelete) return;
-                  const { error } = await supabase.from('leads').delete().eq('id', leadToDelete.id);
-                  if (!error) {
-                    setLeads(prev => prev.filter(l => l.id !== leadToDelete.id));
-                    setSelectedLead(null);
-                  }
-                  setLeadToDelete(null);
-                }}
-                className="bg-red-500 hover:bg-red-600 text-white uppercase tracking-widest text-[10px] font-black rounded-xl"
-              >
-                Sim, Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* Slide-over Drawer do Lead estilo LeadSite */}
+      {selectedLead && (
+        <LeadDetailsPanel 
+          lead={selectedLead} 
+          onClose={() => setSelectedLead(null)}
+          onAction={handleLeadAction}
+        />
+      )}
     </div>
   );
 }
+
+export default LeadsMap;
