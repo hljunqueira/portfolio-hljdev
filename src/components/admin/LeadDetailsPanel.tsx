@@ -268,6 +268,43 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           {/* TAB 1: VISÃO GERAL */}
           {activeTab === 'info' && (
             <div className="space-y-6">
+              {/* Banner Demo de Site IA */}
+              <div className="bg-gradient-to-r from-blue-950/40 via-blue-900/30 to-purple-950/40 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between shadow-xl flex-wrap gap-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider flex items-center gap-1">
+                    <Sparkles size={12} /> Demonstração Interativa ao Vivo
+                  </span>
+                  <h4 className="text-white font-bold text-xs mt-0.5">Site Modelo com Dados Reais do Lead</h4>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const companySlug = (lead.empresa || lead.nome)
+                        .toLowerCase()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-+|-+$/g, "");
+                      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
+                      navigator.clipboard.writeText(demoUrl);
+                      toast({ title: "Link Personalizado Copiado!", description: demoUrl });
+                    }}
+                    className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-bold text-xs rounded-xl border border-zinc-700 transition-all flex items-center gap-1"
+                  >
+                    📋 Copiar Link
+                  </button>
+
+                  <a
+                    href={`/demo/${(lead.empresa || lead.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}?id=${lead.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
+                  >
+                    Ver Demo <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Informações de Contato</h4>
@@ -434,6 +471,15 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
           >
             <MessageCircle size={16} /> WhatsApp
           </Button>
+
+          <a
+            href={`/demo/${(lead.empresa || lead.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}?id=${lead.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs py-3 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20"
+          >
+            <Sparkles size={16} /> Demo IA
+          </a>
 
           <Button
             onClick={() => setIsObjectionModalOpen(true)}

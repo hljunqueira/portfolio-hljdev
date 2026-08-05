@@ -47,6 +47,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const LeadDemoSite = lazy(() => import("./pages/demo/LeadDemoSite"));
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -62,6 +64,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/links" element={<LinksBio />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/demo/:leadId" element={<Suspense fallback={<AdminLoader />}><LeadDemoSite /></Suspense>} />
 
             {/* Admin — lazy-loaded, protected */}
             <Route
