@@ -6,16 +6,28 @@ import {
   Document,
   StyleSheet,
   Font,
-  Image,
 } from "@react-pdf/renderer";
 
-// Register a clean font (system fallback)
-Font.register({
-  family: "Inter",
-  fonts: [
-    { src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff" },
-  ],
-});
+export interface ProposalPhase {
+  title: string;
+  description: string;
+  duration: string;
+}
+
+export interface ProposalData {
+  clientName: string;
+  clientCompany?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  serviceType: string;
+  summary: string;
+  roiLossEstimate?: string;
+  phases: ProposalPhase[];
+  investment: string;
+  paymentTerms: string;
+  nfGuarantee?: string;
+  validUntil: string;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -35,12 +47,15 @@ const styles = StyleSheet.create({
   agencyInfo: {
     flexDirection: "column",
   },
+  docInfo: {
+    textAlign: "right",
+  },
   agencyName: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: "Helvetica-Bold",
     color: "#000000",
   },
-  agencyNameAccent: {
+  agencyAccent: {
     color: "#22c55e",
   },
   agencyTagline: {
@@ -49,9 +64,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
     marginTop: 2,
-  },
-  docInfo: {
-    textAlign: "right",
   },
   docTitle: {
     fontSize: 12,
@@ -68,9 +80,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4f4f5",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 15,
     flexDirection: "row",
-    gap: 20,
   },
   clientField: {
     flex: 1,
@@ -79,60 +90,52 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: "#71717a",
     textTransform: "uppercase",
-    marginBottom: 2,
+    fontFamily: "Helvetica-Bold",
   },
   fieldValue: {
     fontSize: 10,
+    color: "#09090b",
+    marginTop: 2,
     fontFamily: "Helvetica-Bold",
-    color: "#18181b",
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
-    color: "#000000",
+    color: "#09090b",
     marginBottom: 8,
-    borderLeft: "3px solid #22c55e",
-    paddingLeft: 8,
+    letterSpacing: 0.5,
   },
-  summaryText: {
-    fontSize: 9,
-    color: "#3f3f46",
-    lineHeight: 1.5,
-    marginBottom: 10,
-    textAlign: "justify",
-  },
-  mockupSection: {
-    marginVertical: 15,
-    alignItems: "center",
-  },
-  mockupImage: {
-    width: "100%",
-    height: 180,
-    borderRadius: 8,
-    objectFit: "cover",
-    border: "1px solid #e4e4e7",
-  },
-  mockupLabel: {
-    fontSize: 7,
-    color: "#22c55e",
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginTop: 6,
-  },
-  phasesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 20,
-  },
-  phaseCard: {
-    width: "48%",
-    backgroundColor: "#ffffff",
-    border: "1px solid #e4e4e7",
+  roiBox: {
+    backgroundColor: "#fef2f2",
+    borderLeft: "3px solid #ef4444",
     padding: 10,
     borderRadius: 6,
+    marginBottom: 15,
+  },
+  roiTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: "#991b1b",
+    textTransform: "uppercase",
+  },
+  roiText: {
+    fontSize: 9,
+    color: "#7f1d1d",
+    marginTop: 3,
+  },
+  summaryText: {
+    fontSize: 9.5,
+    color: "#3f3f46",
+    lineHeight: 1.5,
+    marginBottom: 15,
+  },
+  phaseCard: {
+    backgroundColor: "#fafafa",
+    border: "1px solid #e4e4e7",
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
   },
   phaseHeader: {
     flexDirection: "row",
@@ -140,9 +143,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   phaseTitle: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: "#18181b",
+    color: "#09090b",
   },
   phaseDuration: {
     fontSize: 8,
@@ -150,141 +153,134 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   phaseDesc: {
-    fontSize: 8,
-    color: "#71717a",
+    fontSize: 8.5,
+    color: "#52525b",
     lineHeight: 1.4,
-  },
-  pricingFooter: {
-    marginTop: "auto",
-    paddingTop: 15,
-    borderTop: "1px solid #e4e4e7",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
   },
   investmentBox: {
     backgroundColor: "#f0fdf4",
-    padding: "10px 20px",
+    border: "1.5px solid #22c55e",
     borderRadius: 8,
-    border: "1px solid #dcfce7",
+    padding: 14,
+    marginTop: 15,
   },
-  investmentLabel: {
+  invTitle: {
     fontSize: 8,
-    color: "#166534",
-    textTransform: "uppercase",
+    color: "#15803d",
     fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
   },
-  investmentValue: {
+  invAmount: {
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    color: "#14532d",
-  },
-  paymentTerms: {
-    fontSize: 8,
     color: "#166534",
     marginTop: 2,
+    marginBottom: 6,
   },
-  footerBrand: {
-    textAlign: "right",
+  invTerms: {
+    fontSize: 8.5,
+    color: "#15803d",
+    lineHeight: 1.4,
   },
-  footerWeb: {
+  nfBadge: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTop: "1px solid #bbf7d0",
     fontSize: 8,
-    color: "#71717a",
-  },
-  footerContact: {
-    fontSize: 8,
-    color: "#22c55e",
     fontFamily: "Helvetica-Bold",
+    color: "#166534",
+    textTransform: "uppercase",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 25,
+    left: 30,
+    right: 30,
+    borderTop: "1px solid #e4e4e7",
+    paddingTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    fontSize: 7.5,
+    color: "#a1a1aa",
   },
 });
 
-export interface ProposalData {
-  clientName: string;
-  clientEmail?: string;
-  clientPhone?: string;
-  projectType: string;
-  summary: string;
-  phases: { title: string; description: string; duration: string }[];
-  investment: string;
-  paymentTerms: string;
-  validUntil: string;
-  mockupUrl?: string;
-}
-
-export function ProposalDocument({ data }: { data: ProposalData }) {
-  const today = new Date().toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-  return (
-    <Document title={`Proposta HLJ DEV - ${data.clientName}`}>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <View style={styles.agencyInfo}>
-            <Text style={styles.agencyName}>
-              HLJ <Text style={styles.agencyNameAccent}>DEV</Text>
-            </Text>
-            <Text style={styles.agencyTagline}>Sistemas • Automação • IA</Text>
-          </View>
-          <View style={styles.docInfo}>
-            <Text style={styles.docTitle}>{data.projectType}</Text>
-            <Text style={styles.docDate}>Emitida em {today}</Text>
-          </View>
+export const ProposalDocument: React.FC<{ data: ProposalData }> = ({ data }) => (
+  <Document title={`Proposta HLJ DEV - ${data.clientName}`}>
+    <Page size="A4" style={styles.page}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.agencyInfo}>
+          <Text style={styles.agencyName}>
+            HLJ <Text style={styles.agencyAccent}>DEV</Text>
+          </Text>
+          <Text style={styles.agencyTagline}>Software Engineering & IA de Elite</Text>
         </View>
-
-        <View style={styles.clientSection}>
-          <View style={styles.clientField}>
-            <Text style={styles.fieldLabel}>Cliente</Text>
-            <Text style={styles.fieldValue}>{data.clientName}</Text>
-          </View>
-          <View style={styles.clientField}>
-            <Text style={styles.fieldLabel}>E-mail / Telefone</Text>
-            <Text style={styles.fieldValue}>{data.clientEmail || data.clientPhone || "Direto"}</Text>
-          </View>
-          <View style={styles.clientField}>
-            <Text style={styles.fieldLabel}>Validade</Text>
-            <Text style={styles.fieldValue}>{data.validUntil}</Text>
-          </View>
+        <View style={styles.docInfo}>
+          <Text style={styles.docTitle}>Proposta Comercial</Text>
+          <Text style={styles.docDate}>Validade: {data.validUntil}</Text>
         </View>
+      </View>
 
-        <Text style={styles.sectionTitle}>Escopo Estratégico</Text>
-        <Text style={styles.summaryText}>{data.summary}</Text>
+      {/* Client Info */}
+      <View style={styles.clientSection}>
+        <View style={styles.clientField}>
+          <Text style={styles.fieldLabel}>Cliente</Text>
+          <Text style={styles.fieldValue}>{data.clientName}</Text>
+        </View>
+        <View style={styles.clientField}>
+          <Text style={styles.fieldLabel}>Empresa / Projeto</Text>
+          <Text style={styles.fieldValue}>{data.clientCompany}</Text>
+        </View>
+        <View style={styles.clientField}>
+          <Text style={styles.fieldLabel}>Tipo de Solução</Text>
+          <Text style={styles.fieldValue}>{data.serviceType.toUpperCase()}</Text>
+        </View>
+      </View>
 
-        {data.mockupUrl && (
-          <View style={styles.mockupSection} wrap={false}>
-            <Text style={styles.sectionTitle}>Conceito Inicial & Design Proposto</Text>
-            <Image src={data.mockupUrl} style={styles.mockupImage} />
-            <Text style={styles.mockupLabel}>— Protótipo Visual Sugerido para {data.clientName} —</Text>
+      {/* ROI / Perda Estimada */}
+      {data.roiLossEstimate && (
+        <View style={styles.roiBox}>
+          <Text style={styles.roiTitle}>⚠️ Diagnóstico Financeiro & Vácuo Digital</Text>
+          <Text style={styles.roiText}>{data.roiLossEstimate}</Text>
+        </View>
+      )}
+
+      {/* Summary */}
+      <Text style={styles.sectionTitle}>1. Diagnóstico & Escopo Estratégico</Text>
+      <Text style={styles.summaryText}>{data.summary}</Text>
+
+      {/* Phases */}
+      <Text style={styles.sectionTitle}>2. Cronograma de Execução</Text>
+      {data.phases.map((phase, idx) => (
+        <View key={idx} style={styles.phaseCard}>
+          <View style={styles.phaseHeader}>
+            <Text style={styles.phaseTitle}>{phase.title}</Text>
+            <Text style={styles.phaseDuration}>{phase.duration}</Text>
           </View>
+          <Text style={styles.phaseDesc}>{phase.description}</Text>
+        </View>
+      ))}
+
+      {/* Investment & Payment Options */}
+      <View style={styles.investmentBox}>
+        <Text style={styles.invTitle}>3. Investimento & Opções de Parcelamento</Text>
+        <Text style={styles.invAmount}>{data.investment}</Text>
+        <Text style={styles.invTerms}>💳 Condições: {data.paymentTerms}</Text>
+
+        {data.nfGuarantee && (
+          <Text style={styles.nfBadge}>
+            📜 {data.nfGuarantee} (Simples Nacional)
+          </Text>
         )}
+      </View>
 
-        <Text style={styles.sectionTitle}>Cronograma de Fases</Text>
-        <View style={styles.phasesGrid}>
-          {data.phases.map((phase, i) => (
-            <View key={i} style={styles.phaseCard}>
-              <View style={styles.phaseHeader}>
-                <Text style={styles.phaseTitle}>{phase.title}</Text>
-                <Text style={styles.phaseDuration}>{phase.duration}</Text>
-              </View>
-              <Text style={styles.phaseDesc}>{phase.description}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.pricingFooter}>
-          <View style={styles.investmentBox}>
-            <Text style={styles.investmentLabel}>Investimento Estimado</Text>
-            <Text style={styles.investmentValue}>{data.investment}</Text>
-            <Text style={styles.paymentTerms}>{data.paymentTerms}</Text>
-          </View>
-          <View style={styles.footerBrand}>
-            <Text style={styles.footerWeb}>hljdev.com.br</Text>
-            <Text style={styles.footerContact}>contato@hljdev.com.br</Text>
-          </View>
-        </View>
-      </Page>
-    </Document>
-  );
-}
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text>HLJ DEV Tecnologia LTDA • hljdev.com.br</Text>
+        <Text>Página 1 de 1</Text>
+        <Text>Documento gerado eletronicamente</Text>
+      </View>
+    </Page>
+  </Document>
+);

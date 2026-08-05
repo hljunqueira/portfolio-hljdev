@@ -163,11 +163,14 @@ const AdminConfig = () => {
       const data = await res.json();
       console.log("Evolution API Connect Data Received:", JSON.stringify(data, null, 2));
 
-      if (data.code) {
-        const qr = data.code.startsWith('data:image') ? data.code : `data:image/png;base64,${data.code}`;
+      // Extrai o QR Code testando múltiplos formatos de payload da Evolution API v2.3.7
+      const rawQr = data.base64 || data.code?.base64 || data.qrcode?.base64 || data.code || data.qrcode || "";
+      
+      if (rawQr) {
+        const qr = rawQr.startsWith('data:image') ? rawQr : `data:image/png;base64,${rawQr}`;
         setQrCode(qr);
         setWaStatus('DISCONNECTED');
-        toast({ title: "QR Code Pronto!", description: "Escaneie agora." });
+        toast({ title: "QR Code Pronto!", description: "Escaneie agora com o WhatsApp." });
       } else if (data.instance?.state === 'open' || data.status === 'CONNECTED' || data.instance?.connectionStatus === 'open') {
         setWaStatus('CONNECTED');
         setQrCode(null);
@@ -180,7 +183,7 @@ const AdminConfig = () => {
     } catch (err: any) {
       console.error("WA Connection Process Error:", err);
       if (err.name === 'AbortError') {
-        toast({ title: "Tempo Esgotado", description: "A Evolution API demorou muito para responder.", variant: "destructive" });
+        toast({ title: "Tempo Esgotado", description: "A Evolution API demorou para responder.", variant: "destructive" });
       } else {
         toast({ title: "Erro na Conexão", description: "Não foi possível falar com a Evolution API.", variant: "destructive" });
       }
@@ -437,25 +440,84 @@ const AdminConfig = () => {
               </div>
             </section>
 
-            {/* Pricing Section */}
-            <section className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8">
+            {/* Pricing & Financial Section */}
+            <section className="bg-zinc-950 border border-zinc-900 rounded-3xl p-8 space-y-6">
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-6 flex items-center gap-2">
-                <DollarSign size={14} /> Tabela de Preços (Propostas IA)
+                <DollarSign size={14} /> Tabela de Preços & Condições Fiscais (Propostas IA)
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Sites Institucionais</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/60">
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">1. Sites Institucionais</h4>
                   <div className="flex gap-2">
                     <PriceInput label="Mín" value={sysConfig?.precos_min_site} onChange={(val) => setSysConfig({ ...sysConfig, precos_min_site: val })} />
                     <PriceInput label="Máx" value={sysConfig?.precos_max_site} onChange={(val) => setSysConfig({ ...sysConfig, precos_max_site: val })} />
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Sistemas Customizados</h4>
+
+                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/60">
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">2. Sistemas Customizados</h4>
                   <div className="flex gap-2">
                     <PriceInput label="Mín" value={sysConfig?.precos_min_sistema} onChange={(val) => setSysConfig({ ...sysConfig, precos_min_sistema: val })} />
                     <PriceInput label="Máx" value={sysConfig?.precos_max_sistema} onChange={(val) => setSysConfig({ ...sysConfig, precos_max_sistema: val })} />
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/60">
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">3. Automações n8n / IA</h4>
+                  <div className="flex gap-2">
+                    <PriceInput label="Mín" value={sysConfig?.precos_min_automacao || 3500} onChange={(val) => setSysConfig({ ...sysConfig, precos_min_automacao: val })} />
+                    <PriceInput label="Máx" value={sysConfig?.precos_max_automacao || 12000} onChange={(val) => setSysConfig({ ...sysConfig, precos_max_automacao: val })} />
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-zinc-900/40 p-4 rounded-2xl border border-zinc-800/60">
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest">4. Consultoria / Suporte VIP</h4>
+                  <div className="flex gap-2">
+                    <PriceInput label="Mín" value={sysConfig?.precos_min_consultoria || 1500} onChange={(val) => setSysConfig({ ...sysConfig, precos_min_consultoria: val })} />
+                    <PriceInput label="Máx" value={sysConfig?.precos_max_consultoria || 6000} onChange={(val) => setSysConfig({ ...sysConfig, precos_max_consultoria: val })} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Parcelamento & Regras Fiscais */}
+              <div className="pt-4 border-t border-zinc-900 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Parcelas Sem Juros</label>
+                  <select
+                    value={sysConfig?.max_parcelas_sem_juros || 6}
+                    onChange={(e) => setSysConfig({ ...sysConfig, max_parcelas_sem_juros: parseInt(e.target.value) })}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-zinc-200 text-xs font-bold focus:border-primary/50"
+                  >
+                    <option value={3}>Até 3x sem juros</option>
+                    <option value={6}>Até 6x sem juros</option>
+                    <option value={12}>Até 12x sem juros</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Desconto PIX / À Vista (%)</label>
+                  <input
+                    type="number"
+                    value={sysConfig?.taxa_desconto_pix || 5.0}
+                    onChange={(e) => setSysConfig({ ...sysConfig, taxa_desconto_pix: parseFloat(e.target.value) })}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-zinc-200 text-xs font-bold focus:border-primary/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Emissão Garantida de NF-e</label>
+                  <div className="flex items-center gap-3 bg-zinc-900 p-2.5 rounded-xl border border-zinc-800">
+                    <input
+                      type="checkbox"
+                      id="emissao_nf"
+                      checked={sysConfig?.emissao_nf_garantida ?? true}
+                      onChange={(e) => setSysConfig({ ...sysConfig, emissao_nf_garantida: e.target.checked })}
+                      className="w-4 h-4 rounded accent-primary cursor-pointer"
+                    />
+                    <label htmlFor="emissao_nf" className="text-xs font-bold text-zinc-300 cursor-pointer">
+                      Garantia NF-e Inclusa
+                    </label>
                   </div>
                 </div>
               </div>
