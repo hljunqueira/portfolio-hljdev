@@ -168,13 +168,79 @@ export default function LeadDemoSite() {
     fetchLead();
   }, [leadId, explicitId]);
 
+  const [progress, setProgress] = useState(0);
+  const [loadingStep, setLoadingStep] = useState("Iniciando motor de IA HLJ DEV...");
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(interval);
+          return 95;
+        }
+        const next = prev + Math.floor(Math.random() * 15) + 5;
+        if (next > 30 && next <= 65) {
+          setLoadingStep("Sincronizando avaliações e localização do Google Maps...");
+        } else if (next > 65 && next <= 85) {
+          setLoadingStep("Montando layout de alta conversão e prova social...");
+        } else if (next > 85) {
+          setLoadingStep("Finalizando renderização interativa da demonstração...");
+        }
+        return next > 95 ? 95 : next;
+      });
+    }, 180);
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-black text-xs uppercase tracking-widest text-primary animate-pulse">
-          Gerando Modelo de Alta Conversão com IA...
-        </p>
+      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Neon Ambient Light */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="w-full max-w-md bg-zinc-900/60 backdrop-blur-2xl border border-zinc-800/80 rounded-3xl p-8 text-center space-y-6 shadow-2xl relative z-10">
+          {/* Logo / Badge Animated Icon */}
+          <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              className="absolute inset-0 rounded-3xl border-2 border-dashed border-primary/60"
+            />
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/40 flex items-center justify-center text-primary shadow-lg shadow-primary/20">
+              <Sparkles size={28} className="animate-pulse" />
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              HLJ DEV • AI DEMO ENGINE
+            </span>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight mt-3">
+              Gerando Demonstração de Elite
+            </h2>
+            <p className="text-zinc-400 text-xs mt-1.5 min-h-[32px] flex items-center justify-center">
+              {loadingStep}
+            </p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="h-2.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 p-0.5">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary via-emerald-400 to-blue-500 rounded-full"
+                style={{ width: `${progress}%` }}
+                transition={{ ease: "easeOut" }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 px-1">
+              <span>PROCESSSANDO ESTRUTURA</span>
+              <span className="text-primary font-black">{progress}%</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -384,7 +384,7 @@ Diretrizes Visuais & UX:
                     </button>
 
                     <a
-                      href={`/demo/${companySlug}?id=${lead.id}`}
+                      href={`/demo/${companySlug}?id=${lead.id}&type=${selectedProjectType}`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1 shadow-lg shadow-blue-600/20 transition-all"
@@ -583,7 +583,7 @@ Diretrizes Visuais & UX:
           </Button>
 
           <a
-            href={`/demo/${(lead.empresa || lead.nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}?id=${lead.id}`}
+            href={`/demo/${companySlug}?id=${lead.id}&type=${selectedProjectType}`}
             target="_blank"
             rel="noreferrer"
             className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs py-3 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20"
