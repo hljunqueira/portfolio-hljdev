@@ -266,8 +266,8 @@ REGRAS:
     const finalPhone = clean.length <= 11 ? `55${clean}` : clean;
     const company = lead.empresa || lead.nome;
     const cleanName = company.split(/[|:-]/)[0].trim();
-    const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
-    const message = encodeURIComponent(`Olá! Notei a atuação da ${cleanName} e preparei uma demonstração interativa exclusiva de como ficaria a presença digital de vocês: ${demoUrl}`);
+    const portfolioUrl = "https://www.hljdev.com.br";
+    const message = encodeURIComponent(`Olá! Notei a atuação da ${cleanName} e gostaria de apresentar nosso portfólio de sites e sistemas de alta performance de elite: ${portfolioUrl}`);
     window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
   };
 
@@ -288,7 +288,7 @@ REGRAS:
       });
 
       if (res.ok) {
-        toast({ title: "Automação N8N Iniciada! 🚀", description: "O fluxo de prospecção e geração de demo foi disparado no N8N." });
+        toast({ title: "Automação N8N Iniciada", description: "O fluxo de prospecção foi disparado no N8N." });
       } else {
         toast({ title: "Erro na Automação N8N", description: `Status: ${res.status}`, variant: "destructive" });
       }
@@ -338,101 +338,84 @@ Diretrizes Visuais & UX:
     <>
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-zinc-950/98 border-l border-zinc-800 backdrop-blur-2xl shadow-2xl flex flex-col transition-all">
         
-        {/* Header Perfil do Lead (LeadSite Profile Style) */}
-        <div className="p-6 border-b border-zinc-900 bg-zinc-900/40 relative">
+        {/* Header Perfil do Lead (Clean & Minimalist) */}
+        <div className="p-6 border-b border-zinc-900 bg-zinc-900/30 relative">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
               {lead.foto_url ? (
                 <img src={lead.foto_url} alt={lead.nome} className="w-14 h-14 rounded-2xl object-cover border border-zinc-800 shrink-0" />
               ) : (
-                <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-primary shrink-0">
-                  <Building2 size={28} />
+                <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 shrink-0 font-bold">
+                  {lead.nome.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
-                <h2 className="text-white font-black text-lg tracking-tight leading-tight">{lead.nome}</h2>
+              <div className="space-y-1">
+                <h2 className="text-white font-bold text-lg tracking-tight leading-tight">{lead.nome}</h2>
                 {lead.empresa && lead.empresa !== lead.nome && (
-                  <p className="text-zinc-400 text-xs font-bold mt-0.5">{lead.empresa}</p>
+                  <p className="text-zinc-400 text-xs">{lead.empresa}</p>
                 )}
 
-                {/* Rating Google Maps + Link direto de Avaliações */}
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {/* Rating Google Maps */}
+                {lead.rating && (
                   <a 
                     href={googleReviewsUrl} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 px-2 py-0.5 rounded-md text-xs font-bold gap-1 transition-all"
+                    className="inline-flex items-center text-amber-400 text-xs font-semibold gap-1 hover:underline"
                   >
-                    <Star size={12} className="fill-amber-400" /> {lead.rating || "5.0"}
-                    <span className="text-[10px] text-amber-200/80 font-medium">
-                      ({lead.user_ratings_total || 0} avaliações no Google) <ExternalLink size={10} className="inline ml-0.5" />
-                    </span>
+                    ★ {lead.rating} <span className="text-zinc-500 font-normal">({lead.user_ratings_total || 0} avaliações no Google)</span>
                   </a>
+                )}
 
-                  <a 
-                    href={googleMapsUrl} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="px-2 py-0.5 bg-blue-500/20 hover:bg-blue-500 text-blue-300 hover:text-white border border-blue-500/40 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
-                  >
-                    <MapPin size={10} /> Google Maps <ExternalLink size={10} />
-                  </a>
-                </div>
-
-                {/* Badges Neon estilo LeadSite */}
-                <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
-                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                    finalScore >= 80 ? "bg-green-500/20 text-green-400 border border-green-500/40 shadow-[0_0_10px_rgba(34,197,94,0.3)]" :
-                    finalScore >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" :
-                    "bg-red-500/20 text-red-400 border border-red-500/40"
+                {/* Clean Badges */}
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-semibold ${
+                    finalScore >= 80 ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                    finalScore >= 50 ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                    "bg-red-500/10 text-red-400 border border-red-500/20"
                   }`}>
                     Score {finalScore} pts
                   </span>
 
                   {isNoWebsite ? (
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30">
-                      Vácuo Digital (Sem Site)
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                      Sem Site
                     </span>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                       Com Site
                     </span>
                   )}
-
-                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                    <ShieldCheck size={10} /> Garantia NF-e
-                  </span>
                 </div>
               </div>
             </div>
 
             <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-xl hover:bg-zinc-900 transition-all">
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        {/* Navigation Tabs estilo LeadSite */}
+        {/* Clean Navigation Tabs */}
         <div className="flex border-b border-zinc-900 bg-zinc-950 px-6 pt-2">
           {[
-            { id: 'info', label: 'Visão Geral', icon: Building2 },
-            { id: 'proposta', label: 'Proposta & ROI', icon: FileText },
-            { id: 'objecoes', label: 'Tratar Objeções', icon: Sparkles },
-            { id: 'timeline', label: 'Timeline', icon: Activity }
+            { id: 'info', label: 'Visão Geral' },
+            { id: 'proposta', label: 'Proposta & ROI' },
+            { id: 'objecoes', label: 'Tratar Objeções' },
+            { id: 'timeline', label: 'Timeline' }
           ].map(tab => {
-            const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-3.5 py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+                className={`px-4 py-3 text-xs font-semibold border-b-2 transition-all ${
                   active
-                    ? "border-primary text-primary bg-primary/5"
+                    ? "border-primary text-primary"
                     : "border-transparent text-zinc-500 hover:text-zinc-300"
                 }`}
               >
-                <Icon size={14} /> {tab.label}
+                {tab.label}
               </button>
             );
           })}
@@ -443,118 +426,109 @@ Diretrizes Visuais & UX:
           {/* TAB 1: VISÃO GERAL */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              {/* Banner Gerador de Protótipo IA (Estilo Lovable / Bolt) */}
-              <div className="bg-gradient-to-r from-purple-950/40 via-blue-900/30 to-blue-950/40 border border-purple-500/30 rounded-2xl p-4 space-y-3 shadow-xl">
+              {/* Gerador de Protótipos IA */}
+              <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider flex items-center gap-1">
-                      <Sparkles size={12} /> Gerador de Protótipos IA (Lovable / Bolt Engine)
+                    <span className="text-[10px] font-semibold uppercase text-purple-400 tracking-wider">
+                      Gerador de Protótipos IA
                     </span>
-                    <h4 className="text-white font-bold text-xs mt-0.5">Selecione o Tipo de Projeto para o Lead</h4>
+                    <h4 className="text-white font-semibold text-xs mt-0.5">Selecione o Tipo de Projeto</h4>
                   </div>
 
-                  {/* Seletor do Tipo de Entregável */}
                   <select
                     value={selectedProjectType}
                     onChange={(e) => setSelectedProjectType(e.target.value)}
-                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 font-bold focus:border-purple-500"
+                    className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 font-semibold focus:border-purple-500"
                   >
-                    <option value="site_institucional">🌐 Site Institucional de Elite</option>
-                    <option value="site_animado">🚀 Site Animado 3D / Framer</option>
-                    <option value="sistema_web">💻 Sistema Web Customizado</option>
-                    <option value="app_mobile">📱 Aplicativo Mobile / Web App</option>
+                    <option value="site_institucional">Site Institucional de Elite</option>
+                    <option value="site_animado">Site Animado 3D / Framer</option>
+                    <option value="sistema_web">Sistema Web Customizado</option>
+                    <option value="app_mobile">Aplicativo Mobile / Web App</option>
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-purple-500/20 flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={handleTriggerN8N}
-                      disabled={isTriggeringN8N}
-                      className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-lg shadow-purple-600/20 transition-all"
-                    >
-                      {isTriggeringN8N ? <Loader2 className="animate-spin" size={14} /> : <Zap size={14} />} Disparar N8N
-                    </button>
+                <div className="flex items-center gap-2 pt-2 border-t border-zinc-800/60 flex-wrap">
+                  <button
+                    onClick={handleTriggerN8N}
+                    disabled={isTriggeringN8N}
+                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs rounded-xl transition-all"
+                  >
+                    {isTriggeringN8N ? "Disparando..." : "Disparar N8N"}
+                  </button>
 
-                    <button
-                      onClick={() => {
-                        const prompt = generateLovablePrompt();
-                        navigator.clipboard.writeText(prompt);
-                        toast({ title: "Prompt IA Copiado!", description: "Cole no OpenUI/bolt.diy para gerar a aplicação." });
-                      }}
-                      className="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-purple-300 hover:text-white font-bold text-xs rounded-xl border border-purple-500/40 transition-all flex items-center gap-1"
-                    >
-                      📋 Copiar Prompt
-                    </button>
+                  <button
+                    onClick={() => {
+                      const prompt = generateLovablePrompt();
+                      navigator.clipboard.writeText(prompt);
+                      toast({ title: "Prompt IA Copiado!", description: "Cole no OpenUI/bolt.diy para gerar a aplicação." });
+                    }}
+                    className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-semibold text-xs rounded-xl border border-zinc-800 transition-all"
+                  >
+                    Copiar Prompt
+                  </button>
 
-                    <button
-                      onClick={() => {
-                        const prompt = generateLovablePrompt();
-                        navigator.clipboard.writeText(prompt);
-                        toast({ title: "Prompt Bolt/Lovable Copiado! ⚡", description: "Abrindo o Builder (bolt.diy)... Cole no campo de prompt!" });
-                        const targetUrl = `https://builder.hljdev.com.br?prompt=${encodeURIComponent(prompt)}`;
-                        window.open(targetUrl, '_blank');
-                      }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all"
-                    >
-                      <Sparkles size={14} /> GERAR NO BOLT.DIY <ExternalLink size={12} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      const prompt = generateLovablePrompt();
+                      navigator.clipboard.writeText(prompt);
+                      toast({ title: "Prompt Copiado", description: "Abrindo o Builder (bolt.diy)..." });
+                      const targetUrl = `https://builder.hljdev.com.br?prompt=${encodeURIComponent(prompt)}`;
+                      window.open(targetUrl, '_blank');
+                    }}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl transition-all"
+                  >
+                    Gerar no Builder
+                  </button>
 
-                  {/* Links Diretos para Webstudio e Penpot no VPS */}
-                  <div className="flex items-center gap-1.5">
-                    <a
-                      href={`https://builder.hljdev.com.br?prompt=${encodeURIComponent(generateLovablePrompt())}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      🛠️ Builder (bolt.diy)
-                    </a>
-                    <a
-                      href="https://design.hljdev.com.br"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black border border-amber-500/40 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      🎨 Design (Penpot)
-                    </a>
-                  </div>
+                  <a
+                    href="https://design.hljdev.com.br"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 rounded-xl text-xs font-semibold transition-all"
+                  >
+                    Design (Penpot)
+                  </a>
                 </div>
               </div>
 
+              {/* Informações de Contato */}
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Informações de Contato</h4>
+                  <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Informações de Contato</h4>
                   <a
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                    className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-semibold transition-all"
                   >
-                    <MapPin size={12} /> Abrir no Google Maps <ExternalLink size={10} />
+                    Abrir no Google Maps ↗
                   </a>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   {lead.telefone && (
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <Phone size={14} className="text-primary" /> {lead.telefone}
+                    <div className="text-zinc-300">
+                      <span className="text-zinc-500 font-semibold block text-[10px] uppercase">Telefone</span>
+                      {lead.telefone}
                     </div>
                   )}
                   {lead.whatsapp && (
-                    <div className="flex items-center gap-2 text-green-400 font-bold">
-                      <MessageCircle size={14} /> {lead.whatsapp}
+                    <div className="text-green-400 font-semibold">
+                      <span className="text-zinc-500 font-normal block text-[10px] uppercase">WhatsApp</span>
+                      {lead.whatsapp}
                     </div>
                   )}
                   {lead.email && (
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <Mail size={14} className="text-primary" /> {lead.email}
+                    <div className="text-zinc-300">
+                      <span className="text-zinc-500 font-semibold block text-[10px] uppercase">E-mail</span>
+                      {lead.email}
                     </div>
                   )}
                   {lead.endereco && (
-                    <div className="flex items-center gap-2 text-zinc-300 col-span-2">
-                      <MapPin size={14} className="text-primary shrink-0" /> {lead.endereco}
+                    <div className="text-zinc-300 col-span-2">
+                      <span className="text-zinc-500 font-semibold block text-[10px] uppercase">Endereço</span>
+                      {lead.endereco}
                     </div>
                   )}
                 </div>
@@ -562,19 +536,19 @@ Diretrizes Visuais & UX:
 
               {/* Notas Rápidas */}
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-4 space-y-4">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Notas da Negociação</h4>
+                <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Notas da Negociação</h4>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Adicionar observação..."
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
-                    className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700"
                   />
                   <Button
                     onClick={() => newNote.trim() && addNoteMutation.mutate(newNote.trim())}
                     disabled={addNoteMutation.isPending}
-                    className="bg-primary text-black font-bold text-xs"
+                    className="bg-primary text-black font-semibold text-xs px-4"
                   >
                     Salvar
                   </Button>
@@ -596,13 +570,13 @@ Diretrizes Visuais & UX:
           {activeTab === 'proposta' && (
             <div className="space-y-6">
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 space-y-4">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Gerador de Proposta Comercial com ROI</h4>
+                <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Gerador de Proposta Comercial com ROI</h4>
                 <div>
-                  <label className="text-[10px] font-bold text-zinc-400 block mb-2">Selecione o Pilar do Projeto</label>
+                  <label className="text-[10px] font-semibold text-zinc-400 block mb-2">Selecione o Pilar do Projeto</label>
                   <select
                     value={selectedService}
                     onChange={(e) => setSelectedService(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 font-bold"
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 font-semibold"
                   >
                     <option value="site">Site Institucional de Elite (R$ 2.500 - R$ 5.500)</option>
                     <option value="sistema">Sistema Web Customizado (R$ 4.500 - R$ 12.000)</option>
@@ -615,18 +589,18 @@ Diretrizes Visuais & UX:
                   <Button
                     onClick={() => generateAndDownload(lead as any, selectedService)}
                     disabled={isGenerating}
-                    className="flex-1 bg-primary text-black font-black uppercase text-xs tracking-widest py-3 rounded-xl"
+                    className="flex-1 bg-primary text-black font-semibold text-xs py-3 rounded-xl"
                   >
-                    {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <FileText size={16} />} Gerar PDF com ROI
+                    {isGenerating ? "Gerando..." : "Gerar PDF com ROI"}
                   </Button>
 
                   {lastBlob && (
                     <Button
                       onClick={handleSendProposalWA}
                       disabled={isSendingWA}
-                      className="bg-green-500 hover:bg-green-400 text-black font-black uppercase text-xs tracking-widest py-3 rounded-xl flex items-center gap-1"
+                      className="bg-green-500 hover:bg-green-400 text-black font-semibold text-xs py-3 rounded-xl px-4"
                     >
-                      <Send size={14} /> WhatsApp
+                      Enviar WhatsApp
                     </Button>
                   )}
                 </div>
@@ -635,10 +609,10 @@ Diretrizes Visuais & UX:
               {/* WhatsApp AI Copy Generator */}
               <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 space-y-4">
                 <div>
-                  <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider flex items-center gap-1 mb-1">
-                    <Sparkles size={12} /> Abordagem Inteligente para WhatsApp (IA)
+                  <span className="text-[10px] font-semibold uppercase text-purple-400 tracking-wider block mb-1">
+                    Abordagem Inteligente para WhatsApp (IA)
                   </span>
-                  <h4 className="text-white font-bold text-xs">Gere uma copy altamente persuasiva adaptada ao lead</h4>
+                  <h4 className="text-white font-semibold text-xs">Gere uma copy altamente persuasiva apresentando o portfólio</h4>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -646,7 +620,7 @@ Diretrizes Visuais & UX:
                     <button
                       key={t}
                       onClick={() => setWaTone(t)}
-                      className={`py-1.5 rounded-lg border text-xs font-bold capitalize transition-all ${
+                      className={`py-1.5 rounded-lg border text-xs font-semibold capitalize transition-all ${
                         waTone === t
                           ? "bg-purple-500/20 border-purple-500 text-purple-300"
                           : "bg-zinc-950 border-zinc-900 text-zinc-500 hover:border-zinc-800"
@@ -660,17 +634,9 @@ Diretrizes Visuais & UX:
                 <Button
                   onClick={handleGenerateAIWhatsAppMessage}
                   disabled={isGeneratingWA}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/20"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs py-2.5 rounded-xl transition-all"
                 >
-                  {isGeneratingWA ? (
-                    <>
-                      <Loader2 className="animate-spin" size={14} /> Redigindo abordagem...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} /> Gerar Abordagem com IA
-                    </>
-                  )}
+                  {isGeneratingWA ? "Redigindo abordagem..." : "Gerar Abordagem com IA"}
                 </Button>
 
                 {waMessage && (
@@ -686,15 +652,15 @@ Diretrizes Visuais & UX:
                       <Button
                         onClick={() => handleSendAIPendingMessage(true)}
                         disabled={isSendingWA}
-                        className="bg-green-500 hover:bg-green-400 text-black font-black uppercase text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                        className="bg-green-500 hover:bg-green-400 text-black font-semibold text-xs py-2.5 rounded-xl"
                       >
-                        <MessageCircle size={14} /> Evolution API
+                        Evolution API
                       </Button>
                       <Button
                         onClick={() => handleSendAIPendingMessage(false)}
-                        className="bg-zinc-800 hover:bg-zinc-700 text-white font-black uppercase text-xs py-2.5 rounded-xl border border-zinc-700 flex items-center justify-center gap-1.5"
+                        className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs py-2.5 rounded-xl border border-zinc-700"
                       >
-                        <ExternalLink size={14} /> WhatsApp Web
+                        WhatsApp Web ↗
                       </Button>
                     </div>
                   </div>
@@ -706,17 +672,14 @@ Diretrizes Visuais & UX:
           {/* TAB 3: OBJEÇÕES */}
           {activeTab === 'objecoes' && (
             <div className="space-y-6">
-              <div className="bg-purple-950/20 border border-purple-800/40 rounded-2xl p-6 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mx-auto">
-                  <Sparkles size={24} />
-                </div>
+              <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 text-center space-y-4">
                 <div>
-                  <h4 className="text-white font-black text-sm uppercase tracking-tight">Gerenciador de Objeções da IA</h4>
-                  <p className="text-zinc-400 text-xs mt-1">O cliente disse que tá caro ou vai pensar? Gere 3 alternativas de resposta consultiva.</p>
+                  <h4 className="text-white font-semibold text-sm uppercase">Gerenciador de Objeções da IA</h4>
+                  <p className="text-zinc-400 text-xs mt-1">Gere 3 alternativas de resposta consultiva para objeções de clientes.</p>
                 </div>
                 <Button
                   onClick={() => setIsObjectionModalOpen(true)}
-                  className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs tracking-widest py-3 px-6 rounded-xl shadow-lg shadow-purple-600/20"
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs py-3 px-6 rounded-xl"
                 >
                   Abrir Assistente de Objeções
                 </Button>
@@ -727,18 +690,18 @@ Diretrizes Visuais & UX:
           {/* TAB 4: TIMELINE */}
           {activeTab === 'timeline' && (
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Linha do Tempo de Atividades</h4>
+              <h4 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Linha do Tempo de Atividades</h4>
               {isLoadingTimeline ? (
                 <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
               ) : timelineEvents.length === 0 ? (
-                <div className="text-center p-8 text-zinc-600 text-xs font-bold">Nenhuma atividade registrada ainda.</div>
+                <div className="text-center p-8 text-zinc-600 text-xs font-semibold">Nenhuma atividade registrada ainda.</div>
               ) : (
                 <div className="relative pl-6 border-l border-zinc-800 space-y-6">
                   {timelineEvents.map((evt: any) => (
                     <div key={evt.id} className="relative">
                       <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-zinc-900 border-2 border-primary" />
                       <div className="bg-zinc-900/40 p-3.5 rounded-2xl border border-zinc-800/60 space-y-1">
-                        <span className="text-[10px] font-black uppercase text-primary tracking-wider">{evt.tipo.replace('_', ' ')}</span>
+                        <span className="text-[10px] font-semibold uppercase text-primary tracking-wider">{evt.tipo.replace('_', ' ')}</span>
                         <p className="text-xs text-zinc-300 font-medium">{evt.descricao}</p>
                         <span className="text-[9px] text-zinc-600 block">{new Date(evt.created_at).toLocaleString("pt-BR")}</span>
                       </div>
@@ -750,40 +713,28 @@ Diretrizes Visuais & UX:
           )}
         </div>
 
-        {/* Rodapé Fixo de Ações Rápidas (Estilo LeadSite Quick Action Bar) */}
+        {/* Rodapé Fixo de Ações Rápidas (Clean & Streamlined) */}
         <div className="p-4 border-t border-zinc-900 bg-zinc-950 flex items-center gap-2">
           <Button
             onClick={handleOpenWhatsAppDirect}
-            className="flex-1 bg-green-500 hover:bg-green-400 text-black font-black uppercase text-xs tracking-wider py-3 rounded-xl flex items-center justify-center gap-1.5"
+            className="flex-1 bg-green-500 hover:bg-green-400 text-black font-semibold text-xs py-3 rounded-xl"
           >
-            <MessageCircle size={16} /> WhatsApp
+            WhatsApp (Portfólio)
           </Button>
-
-          <button
-            onClick={() => {
-              const prompt = generateLovablePrompt();
-              navigator.clipboard.writeText(prompt);
-              toast({ title: "Prompt Bolt/Lovable Copiado! ⚡", description: "Abrindo o Builder (bolt.diy)... Cole no campo de prompt!" });
-              window.open(`https://builder.hljdev.com.br?prompt=${encodeURIComponent(prompt)}`, '_blank');
-            }}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs py-3 px-3.5 rounded-xl flex items-center gap-1.5 shadow-lg shadow-blue-600/20"
-          >
-            <Sparkles size={16} /> DEMO BOLT (IA)
-          </button>
 
           <Button
             onClick={() => setIsObjectionModalOpen(true)}
-            className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs py-3 px-4 rounded-xl flex items-center gap-1.5"
+            className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold text-xs py-3 px-4 rounded-xl"
           >
-            <Sparkles size={16} /> Objeção
+            Objeção
           </Button>
 
           <Button
             onClick={() => generateAndDownload(lead as any, selectedService)}
             disabled={isGenerating}
-            className="bg-primary text-black font-black uppercase text-xs py-3 px-4 rounded-xl flex items-center gap-1.5"
+            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 font-semibold text-xs py-3 px-4 rounded-xl"
           >
-            <FileText size={16} /> PDF
+            PDF
           </Button>
 
           <Button
