@@ -55,8 +55,12 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const [newNote, setNewNote] = useState("");
 
   const { generateAndDownload, isGenerating, lastBlob } = useProposalGenerator();
-  const { sendFile, isSending: isSendingWA } = useEvolution();
+  const { sendFile, sendText, isSending: isSendingWA } = useEvolution();
   const queryClient = useQueryClient();
+
+  const [waTone, setWaTone] = useState<'consultivo' | 'direto' | 'urgente'>('consultivo');
+  const [waMessage, setWaMessage] = useState("");
+  const [isGeneratingWA, setIsGeneratingWA] = useState(false);
 
   const finalScore = lead.lead_score ?? lead.score ?? 0;
   const isNoWebsite = !lead.website || lead.website.trim() === "";
@@ -104,6 +108,12 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     }
   });
 
+  const companySlug = (lead.empresa || lead.nome)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
   const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -140,6 +150,107 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
       }
     } catch (err: any) {
       toast({ title: "Erro no envio", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleGenerateAIWhatsAppMessage = async () => {
+    setIsGeneratingWA(true);
+    try {
+      const company = lead.empresa || lead.nome;
+      const cleanName = company.split(/[|:-]/)[0].trim();
+      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
+      const hasSite = lead.website && lead.website.trim() !== "";
+
+      const prompt = `Você é um copywriter comercial B2B especialista em vendas de sites e sistemas de alta performance.
+Escreva uma mensagem de abordagem comercial curta e persuasiva para enviar no WhatsApp da empresa "${cleanName}" (Nicho: ${lead.categorias?.join(", ") || "Serviços"}).
+
+DADOS DO CLIENTE:
+- Possui site atualmente? ${hasSite ? "Sim: " + lead.website : "Não (Está em Vácuo Digital!)"}
+- Avaliação Google Maps: ${lead.rating ? lead.rating + ' estrelas (' + lead.user_ratings_total + ' avaliações)' : 'Não informado'}
+- Link de Demonstração Interativa da HLJ DEV criada para eles: ${demoUrl}
+
+TOM DA ABORDAGEM: ${waTone.toUpperCase()}
+- tom CONSULTIVO: Foca em otimização, profissionalismo, dores de posicionamento local e como a demonstração resolve isso.
+- tom DIRETO: Mensagem extremamente curta, pragmática, instigando curiosidade para ver a demonstração no link.
+- tom URGENTE: Foca em uma oportunidade especial por tempo limitado para a região/nicho deles.
+
+REGRAS:
+1. Comece com uma saudação amigável e direta (ex: "Olá, tudo bem?").
+2. Seja conciso (máximo de 3 parágrafos curtos, ideal para ler no celular).
+3. Não use placeholders como [Nome do Lead], use o nome real "${cleanName}" ou trate profissionalmente.
+4. Inclua obrigatoriamente a URL de demonstração: ${demoUrl}.
+5. Use emojis moderadamente para destacar pontos importantes.
+6. Retorne APENAS o texto da mensagem, sem explicações nem aspas.`;
+
+      const { data: sysConfig } = await supabase.from("config_sistema").select("*").single();
+
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY || ''}`
+        },
+        body: JSON.stringify({
+          model: sysConfig?.ai_model || "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: "Você é um especialista em redação comercial persuasiva para WhatsApp." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7
+        })
+      });
+
+      if (!res.ok) throw new Error("Erro ao chamar Groq");
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content || "";
+      setWaMessage(content.trim());
+    } catch (err: any) {
+      console.error(err);
+      const company = lead.empresa || lead.nome;
+      const cleanName = company.split(/[|:-]/)[0].trim();
+      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
+      setWaMessage(`Olá! Tudo bem?\n\nNotei a atuação da ${cleanName} e reparei que vocês ainda não têm um posicionamento digital otimizado. Criei uma demonstração exclusiva de como a presença de vocês poderia ficar na web:\n\n👉 ${demoUrl}\n\nO que achou da prévia?`);
+    } finally {
+      setIsGeneratingWA(false);
+    }
+  };
+
+  const handleSendAIPendingMessage = async (viaEvolution: boolean) => {
+    const phone = lead.whatsapp || lead.telefone;
+    if (!phone) {
+      toast({ title: "Telefone não encontrado", variant: "destructive" });
+      return;
+    }
+
+    if (!waMessage.trim()) {
+      toast({ title: "Gere ou digite uma mensagem primeiro", variant: "destructive" });
+      return;
+    }
+
+    if (viaEvolution) {
+      const ok = await sendText(phone, waMessage);
+      if (ok) {
+        await supabase.from('timeline_atividades').insert({
+          lead_id: lead.id,
+          tipo: 'proposta_enviada',
+          descricao: `Proposta de WhatsApp (IA - Tom: ${waTone}) enviada automaticamente via Evolution API`,
+          meta_dados: { tom: waTone, canal: 'evolution' }
+        });
+        queryClient.invalidateQueries({ queryKey: ['lead-timeline', lead.id] });
+      }
+    } else {
+      const clean = phone.replace(/\D/g, '');
+      const finalPhone = clean.length <= 11 ? `55${clean}` : clean;
+      const message = encodeURIComponent(waMessage);
+      window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+
+      await supabase.from('timeline_atividades').insert({
+        lead_id: lead.id,
+        tipo: 'proposta_enviada',
+        descricao: `Proposta de WhatsApp (IA - Tom: ${waTone}) aberta via link direto wa.me`,
+        meta_dados: { tom: waTone, canal: 'direct_link' }
+      });
+      queryClient.invalidateQueries({ queryKey: ['lead-timeline', lead.id] });
     }
   };
 
@@ -193,13 +304,6 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
   const googleReviewsUrl = (lead as any).place_id 
     ? `https://search.google.com/local/reviews?placeid=${(lead as any).place_id}`
     : googleMapsUrl;
-
-  const companySlug = (lead.empresa || lead.nome)
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
   const [selectedProjectType, setSelectedProjectType] = useState<string>("site_institucional");
 
   const generateLovablePrompt = () => {
@@ -526,6 +630,75 @@ Diretrizes Visuais & UX:
                     </Button>
                   )}
                 </div>
+              </div>
+
+              {/* WhatsApp AI Copy Generator */}
+              <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 space-y-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider flex items-center gap-1 mb-1">
+                    <Sparkles size={12} /> Abordagem Inteligente para WhatsApp (IA)
+                  </span>
+                  <h4 className="text-white font-bold text-xs">Gere uma copy altamente persuasiva adaptada ao lead</h4>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {(['consultivo', 'direto', 'urgente'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setWaTone(t)}
+                      className={`py-1.5 rounded-lg border text-xs font-bold capitalize transition-all ${
+                        waTone === t
+                          ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                          : "bg-zinc-950 border-zinc-900 text-zinc-500 hover:border-zinc-800"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={handleGenerateAIWhatsAppMessage}
+                  disabled={isGeneratingWA}
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black uppercase text-xs tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/20"
+                >
+                  {isGeneratingWA ? (
+                    <>
+                      <Loader2 className="animate-spin" size={14} /> Redigindo abordagem...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} /> Gerar Abordagem com IA
+                    </>
+                  )}
+                </Button>
+
+                {waMessage && (
+                  <div className="space-y-3 pt-2 border-t border-zinc-900">
+                    <textarea
+                      value={waMessage}
+                      onChange={(e) => setWaMessage(e.target.value)}
+                      className="w-full h-40 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:border-purple-500/50 resize-none font-medium leading-relaxed"
+                      placeholder="Mensagem gerada pela IA..."
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => handleSendAIPendingMessage(true)}
+                        disabled={isSendingWA}
+                        className="bg-green-500 hover:bg-green-400 text-black font-black uppercase text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                      >
+                        <MessageCircle size={14} /> Evolution API
+                      </Button>
+                      <Button
+                        onClick={() => handleSendAIPendingMessage(false)}
+                        className="bg-zinc-800 hover:bg-zinc-700 text-white font-black uppercase text-xs py-2.5 rounded-xl border border-zinc-700 flex items-center justify-center gap-1.5"
+                      >
+                        <ExternalLink size={14} /> WhatsApp Web
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

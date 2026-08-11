@@ -79,12 +79,43 @@ const NICHOS_LEADSITE = [
   { id: "buffet", label: "Buffet Infantil & Festas", icon: "🎈" }
 ];
 
+const TOP_10_CIDADES_POR_UF: Record<string, string[]> = {
+  AC: ["Rio Branco", "Cruzeiro do Sul", "Sena Madureira", "Tarauacá", "Feijó"],
+  AL: ["Maceió", "Arapiraca", "Rio Largo", "Palmeira dos Índios", "União dos Palmares", "Penedo"],
+  AM: ["Manaus", "Parintins", "Itacoatiara", "Manacapuru", "Coari", "Tefé"],
+  AP: ["Macapá", "Santana", "Laranjal do Jari", "Oiapoque", "Porto Grande"],
+  BA: ["Salvador", "Feira de Santana", "Vitória da Conquista", "Camaçari", "Juazeiro", "Itabuna", "Lauro de Freitas", "Ilhéus", "Jequié", "Barreiras"],
+  CE: ["Fortaleza", "Caucaia", "Juazeiro do Norte", "Maracanaú", "Sobral", "Crato", "Itapipoca", "Maranguape", "Iguatu", "Quixadá"],
+  DF: ["Brasília"],
+  ES: ["Serra", "Vila Velha", "Cariacica", "Vitória", "Cachoeiro de Itapemirim", "Linhares", "Colatina", "Guarapari", "São Mateus"],
+  GO: ["Goiânia", "Aparecida de Goiânia", "Anápolis", "Rio Verde", "Luziânia", "Águas Lindas de Goiás", "Valparaíso de Goiás", "Trindade", "Formosa", "Novo Gama"],
+  MA: ["São Luís", "Imperatriz", "São José de Ribamar", "Timon", "Caxias", "Codó", "Paço do Lumiar", "Açailândia", "Bacabal", "Balsas"],
+  MG: ["Belo Horizonte", "Uberlândia", "Contagem", "Juiz de Fora", "Betim", "Montes Claros", "Ribeirão das Neves", "Uberaba", "Governador Valadares", "Ipatinga"],
+  MS: ["Campo Grande", "Dourados", "Três Lagoas", "Corumbá", "Ponta Porã", "Sidrolândia"],
+  MT: ["Cuiabá", "Várzea Grande", "Rondonópolis", "Sinop", "Tangará da Serra", "Sorriso", "Cáceres", "Primavera do Leste"],
+  PA: ["Belém", "Ananindeua", "Santarém", "Marabá", "Parauapebas", "Castanhal", "Abaetetuba", "Cametá", "Marituba", "Bragança"],
+  PB: ["João Pessoa", "Campina Grande", "Santa Rita", "Patos", "Bayeux", "Sousa", "Cabedelo", "Guarabira"],
+  PE: ["Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru", "Petrolina", "Paulista", "Cabo de Santo Agostinho", "Camaragibe", "Garanhuns", "Vitória de Santo Antão"],
+  PI: ["Teresina", "Parnaíba", "Picos", "Floriano", "Piripiri", "Campo Maior"],
+  PR: ["Curitiba", "Londrina", "Maringá", "Ponta Grossa", "Cascavel", "São José dos Pinhais", "Foz do Iguaçu", "Colombo", "Guarapuava", "Paranaguá"],
+  RJ: ["Rio de Janeiro", "São Gonçalo", "Duque de Caxias", "Nova Iguaçu", "Niterói", "Campos dos Goytacazes", "Belford Roxo", "São João de Meriti", "Petrópolis", "Volta Redonda"],
+  RN: ["Natal", "Mossoró", "Parnamirim", "São Gonçalo do Amarante", "Macaíba", "Caicó"],
+  RO: ["Porto Velho", "Ji-Paraná", "Ariquemes", "Cacoal", "Vilhena", "Jaru"],
+  RR: ["Boa Vista", "Rorainópolis", "Caracaraí", "Cantá"],
+  RS: ["Porto Alegre", "Caxias do Sul", "Canoas", "Pelotas", "Santa Maria", "Gravataí", "Viamão", "Novo Hamburgo", "São Leopoldo", "Rio Grande"],
+  SC: ["Joinville", "Florianópolis", "Blumenau", "São José", "Chapecó", "Criciúma", "Itajaí", "Jaraguá do Sul", "Lages", "Palhoça"],
+  SE: ["Aracaju", "Nossa Senhora do Socorro", "Lagarto", "Itabaiana", "São Cristóvão", "Estância"],
+  SP: ["São Paulo", "Guarulhos", "Campinas", "São Bernardo do Campo", "Santo André", "São José dos Campos", "Osasco", "Ribeirão Preto", "Sorocaba", "Santos"],
+  TO: ["Palmas", "Araguaína", "Gurupi", "Porto Nacional", "Paraíso do Tocantins"]
+};
+
 export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspeccionModalProps) => {
   const [selectedState, setSelectedState] = useState("SC");
   const [citiesList, setCitiesList] = useState<string[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
 
-  const [selectedCity, setSelectedCity] = useState("TODAS");
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [citySearchQuery, setCitySearchQuery] = useState("");
   const [customBairro, setCustomBairro] = useState("");
   const [customLocation, setCustomLocation] = useState("");
   
@@ -110,10 +141,17 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
         const data = await res.json();
         const cityNames = data.map((c: any) => c.nome);
         setCitiesList(cityNames);
-        setSelectedCity("TODAS");
+        // Default: seleciona a primeira cidade (geralmente capital ou ordem alfabética)
+        if (cityNames.length > 0) {
+          setSelectedCities([cityNames[0]]);
+        } else {
+          setSelectedCities([]);
+        }
       } catch (err) {
         console.error("Erro ao carregar cidades do IBGE:", err);
-        setCitiesList(["Florianópolis", "Joinville", "Blumenau", "Curitiba", "São Paulo", "Porto Alegre", "Belo Horizonte"]);
+        const defaultCities = TOP_10_CIDADES_POR_UF[selectedState] || ["Florianópolis"];
+        setCitiesList(defaultCities);
+        setSelectedCities([defaultCities[0]]);
       } finally {
         setIsLoadingCities(false);
       }
@@ -127,55 +165,69 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
   const currentEstObj = ALL_27_ESTADOS.find(e => e.uf === selectedState);
   const activeBairroText = customBairro.trim();
   const activeLocation = customLocation.trim() || (
-    selectedCity === "TODAS"
-      ? `Estado de ${currentEstObj?.nome || selectedState}`
-      : `${activeBairroText ? activeBairroText + ', ' : ''}${selectedCity} - ${selectedState}`
+    selectedCities.length === 0
+      ? "Nenhuma cidade selecionada"
+      : selectedCities.length === 1
+        ? `${activeBairroText ? activeBairroText + ', ' : ''}${selectedCities[0]} - ${selectedState}`
+        : `${selectedCities.length} cidades de ${currentEstObj?.nome || selectedState} (${selectedCities.slice(0, 3).join(", ")}${selectedCities.length > 3 ? '...' : ''})`
   );
   const activeNiche = customNiche.trim() || selectedNiche;
 
   const handleStartExtraction = async () => {
-    if (!activeNiche || !activeLocation) {
-      toast({ title: "Selecione o nicho e a localização", variant: "destructive" });
+    if (!activeNiche || selectedCities.length === 0) {
+      toast({ title: "Selecione o nicho e pelo menos uma cidade", variant: "destructive" });
       return;
     }
 
     setIsExtracting(true);
-    setStepStatus("1. Registrando campanha de prospecção...");
 
     try {
-      const { data: campaign, error: campErr } = await supabase.from("campanhas_maps").insert({
-        name: `${activeNiche} em ${activeLocation}`,
-        keyword: activeNiche,
-        location: activeLocation,
-        status: "running"
-      }).select().single();
-
-      if (campErr) throw new Error("Erro ao registrar campanha: " + campErr.message);
-
-      setStepStatus("2. Consultando Google Places API...");
-
       const n8nWebhookUrl = import.meta.env.VITE_N8N_MAPS_WEBHOOK || "https://n8n.hljdev.com.br/webhook/hlj-extracao-maps";
 
-      await fetch(n8nWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: campaign.id,
-          keyword: activeNiche,
-          location: activeLocation,
-          filtros: {
-            apenas_sem_site: apenasSemSite,
-            validar_whatsapp: apenasWhatsAppValidado,
-            min_avaliacoes: minRatingsCount
-          }
-        })
-      });
+      // Loop sobre cada cidade selecionada com Throttling
+      for (let i = 0; i < selectedCities.length; i++) {
+        const city = selectedCities[i];
+        const cityLocation = `${activeBairroText ? activeBairroText + ', ' : ''}${city} - ${selectedState}`;
+        const campaignName = `${activeNiche} em ${cityLocation}`;
 
-      setStepStatus("3. Filtrando Vácuo Digital e validando WhatsApp...");
+        setStepStatus(`[${i + 1}/${selectedCities.length}] Criando campanha para ${city}...`);
+
+        const { data: campaign, error: campErr } = await supabase.from("campanhas_maps").insert({
+          name: campaignName,
+          keyword: activeNiche,
+          location: cityLocation,
+          status: "running"
+        }).select().single();
+
+        if (campErr) throw new Error(`Erro ao registrar campanha para ${city}: ` + campErr.message);
+
+        setStepStatus(`[${i + 1}/${selectedCities.length}] Consultando Places API para ${city}...`);
+
+        await fetch(n8nWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: campaign.id,
+            keyword: activeNiche,
+            location: cityLocation,
+            filtros: {
+              apenas_sem_site: apenasSemSite,
+              validar_whatsapp: apenasWhatsAppValidado,
+              min_avaliacoes: minRatingsCount
+            }
+          })
+        });
+
+        // Delay de 3 segundos para Throttling (exceto no último)
+        if (i < selectedCities.length - 1) {
+          setStepStatus(`[${i + 1}/${selectedCities.length}] Aguardando intervalo de 3s...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
 
       toast({ 
-        title: "Prospecção Iniciada!", 
-        description: `Buscando ${activeNiche} em ${activeLocation}.` 
+        title: "Prospecção em Lote Iniciada!", 
+        description: `Buscando ${activeNiche} em ${selectedCities.length} cidades.` 
       });
 
       if (onSuccess) onSuccess();
@@ -274,22 +326,85 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase">Cidade / Município</label>
+                  <label className="text-[9px] font-bold text-zinc-500 uppercase">Cidades / Municípios Selecionados ({selectedCities.length})</label>
                   {isLoadingCities && (
                     <span className="text-[9px] text-blue-400 flex items-center gap-1"><Loader2 size={10} className="animate-spin" /> IBGE...</span>
                   )}
                 </div>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
+
+                {/* Filtro de pesquisa de cidades */}
+                <input
+                  type="text"
+                  placeholder="Pesquisar cidade..."
+                  value={citySearchQuery}
+                  onChange={(e) => setCitySearchQuery(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 mb-2 focus:border-blue-500/50"
                   disabled={isLoadingCities}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 text-xs font-bold text-zinc-200"
-                >
-                  <option value="TODAS">🌟 Todas as Cidades de {currentEstObj?.nome} ({citiesList.length} municípios)</option>
-                  {citiesList.map((cidade, idx) => (
-                    <option key={idx} value={cidade}>{cidade}</option>
-                  ))}
-                </select>
+                />
+
+                {/* Atalhos Rápidos */}
+                <div className="flex gap-1.5 mb-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const top10 = TOP_10_CIDADES_POR_UF[selectedState] || [];
+                      // Filtra as que realmente existem na lista do IBGE
+                      const validTop10 = top10.filter(c => citiesList.includes(c));
+                      setSelectedCities(validTop10.length > 0 ? validTop10 : citiesList.slice(0, 10));
+                    }}
+                    className="px-2 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded text-[9px] font-black uppercase transition-all"
+                  >
+                    Top Cidades
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCities(citiesList)}
+                    className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded text-[9px] font-black uppercase transition-all"
+                  >
+                    Selecionar Todas ({citiesList.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCities([])}
+                    className="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-500 border border-zinc-850 rounded text-[9px] font-black uppercase transition-all"
+                  >
+                    Limpar
+                  </button>
+                </div>
+
+                {/* Lista de cidades com Checkbox */}
+                <div className="max-h-44 overflow-y-auto border border-zinc-800/80 rounded-xl p-2 bg-zinc-950/60 space-y-1">
+                  {citiesList
+                    .filter(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(citySearchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")))
+                    .map((cidade, idx) => {
+                      const isChecked = selectedCities.includes(cidade);
+                      return (
+                        <label key={idx} className="flex items-center gap-2 px-2 py-1 hover:bg-zinc-900/60 rounded-md cursor-pointer text-xs">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedCities(prev => prev.filter(c => c !== cidade));
+                              } else {
+                                setSelectedCities(prev => [...prev, cidade]);
+                              }
+                            }}
+                            className="w-3.5 h-3.5 accent-blue-500 rounded cursor-pointer"
+                          />
+                          <span className={`${isChecked ? "text-blue-400 font-bold" : "text-zinc-400"}`}>{cidade}</span>
+                        </label>
+                      );
+                    })}
+                </div>
+
+                {/* Google Places API Cost estimate */}
+                {selectedCities.length > 0 && (
+                  <div className="flex items-center gap-2 text-[9px] text-zinc-500 font-medium mt-2">
+                    <AlertCircle size={10} className="text-zinc-500" />
+                    <span>Custo API Google estimado: <strong className="text-zinc-400">~R$ {(selectedCities.length * 0.30).toFixed(2)}</strong> (Places Search + Details)</span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -49,5 +49,47 @@ export function useEvolution() {
     }
   };
 
-  return { sendFile, isSending };
+  const sendText = async (phone: string, text: string) => {
+    setIsSending(true);
+    const cleanPhone = phone.replace(/\D/g, '');
+    const finalPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+
+    const url = import.meta.env.VITE_EVOLUTION_URL;
+    const apiKey = import.meta.env.VITE_EVOLUTION_API_KEY;
+    const instance = import.meta.env.VITE_EVOLUTION_INSTANCE;
+
+    try {
+      const response = await fetch(`${url}/message/sendText/${instance}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apiKey
+        },
+        body: JSON.stringify({
+          number: finalPhone,
+          text: text
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({ title: "WhatsApp Enviado!", description: "A mensagem foi entregue com sucesso." });
+        return true;
+      } else {
+        throw new Error(data.message || 'Erro ao enviar texto via WhatsApp');
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Erro no WhatsApp", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+      return false;
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return { sendFile, sendText, isSending };
 }
