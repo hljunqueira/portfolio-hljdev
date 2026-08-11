@@ -11,15 +11,19 @@ const customFetch = (url: RequestInfo | URL, options?: RequestInit): Promise<Res
   if (options && options.headers) {
     if (options.headers instanceof Headers) {
       options.headers.delete('x-retry-count');
+      options.headers.delete('X-Retry-Count');
     } else if (Array.isArray(options.headers)) {
       options.headers = options.headers.filter(([key]) => key.toLowerCase() !== 'x-retry-count');
     } else if (typeof options.headers === 'object') {
-      const headers = { ...(options.headers as Record<string, string>) };
-      delete headers['x-retry-count'];
-      delete headers['X-Retry-Count'];
+      const newHeaders: Record<string, string> = {};
+      for (const [key, val] of Object.entries(options.headers as Record<string, string>)) {
+        if (key.toLowerCase() !== 'x-retry-count') {
+          newHeaders[key] = val;
+        }
+      }
       options = {
         ...options,
-        headers,
+        headers: newHeaders,
       };
     }
   }

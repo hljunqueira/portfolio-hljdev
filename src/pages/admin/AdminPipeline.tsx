@@ -35,7 +35,7 @@ const STATUS_COLS = [
 const fetchLeads = async () => {
   const { data, error } = await supabase
     .from("leads")
-    .select("id, nome, empresa, whatsapp, telefone, email, status, origem, lead_score, score, website, rating, user_ratings_total, created_at, endereco, foto_url, categorias")
+    .select("id, nome, whatsapp, telefone, email, status, origem, lead_score, score, website, rating, user_ratings_total, created_at, endereco, foto_url, categorias")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
@@ -252,7 +252,7 @@ const AdminPipeline = () => {
                         </td>
                         <td className="p-4">
                           <div className="font-bold text-white text-sm">{lead.nome}</div>
-                          {lead.empresa && <div className="text-[10px] text-zinc-500">{lead.empresa}</div>}
+                          {(lead as any).empresa && <div className="text-[10px] text-zinc-500">{(lead as any).empresa}</div>}
                         </td>
                         <td className="p-4">
                           <div className="text-zinc-300 font-bold">{lead.whatsapp || lead.telefone || 'N/A'}</div>
@@ -354,8 +354,8 @@ const AdminPipeline = () => {
                                     {lead.nome}
                                   </h4>
 
-                                  {lead.empresa && lead.empresa !== lead.nome && (
-                                    <p className="text-zinc-400 text-xs font-medium mt-0.5 line-clamp-1">{lead.empresa}</p>
+                                  {(lead as any).empresa && (lead as any).empresa !== lead.nome && (
+                                    <p className="text-zinc-400 text-xs font-medium mt-0.5 line-clamp-1">{(lead as any).empresa}</p>
                                   )}
 
                                   <div className="flex items-center justify-between pt-3 border-t border-zinc-800/60 mt-3">
