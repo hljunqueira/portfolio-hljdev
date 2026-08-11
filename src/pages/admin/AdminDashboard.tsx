@@ -17,7 +17,7 @@ import {
 async function fetchLeads() {
   const { data, count, error } = await supabase
     .from("leads")
-    .select("*", { count: "exact" });
+    .select("id, nome, status, created_at, lead_score, score", { count: "exact" });
   if (error) throw error;
   return { data: data ?? [], count: count ?? 0 };
 }
@@ -25,7 +25,7 @@ async function fetchLeads() {
 async function fetchVendasCount() {
   const { count, error } = await supabase
     .from("vendas")
-    .select("*", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true });
   if (error) throw error;
   return count ?? 0;
 }
@@ -33,7 +33,7 @@ async function fetchVendasCount() {
 async function fetchTarefasCount() {
   const { count, error } = await supabase
     .from("tarefas")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("concluida", false);
   if (error) throw error;
   return count ?? 0;

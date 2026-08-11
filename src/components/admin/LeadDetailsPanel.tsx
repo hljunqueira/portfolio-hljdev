@@ -158,29 +158,29 @@ export function LeadDetailsPanel({ lead, onClose, onAction }: LeadDetailsPanelPr
     try {
       const company = lead.empresa || lead.nome;
       const cleanName = company.split(/[|:-]/)[0].trim();
-      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
+      const portfolioUrl = "https://www.hljdev.com.br";
       const hasSite = lead.website && lead.website.trim() !== "";
 
-      const prompt = `Você é um copywriter comercial B2B especialista em vendas de sites e sistemas de alta performance.
-Escreva uma mensagem de abordagem comercial curta e persuasiva para enviar no WhatsApp da empresa "${cleanName}" (Nicho: ${lead.categorias?.join(", ") || "Serviços"}).
+      const prompt = `Você é um copywriter comercial B2B especialista em prospecção de vendas no WhatsApp.
+Escreva uma mensagem comercial altamente persuasiva e amigável para a empresa "${cleanName}" (Nicho: ${lead.categorias?.join(", ") || "Serviços"}).
 
-DADOS DO CLIENTE:
-- Possui site atualmente? ${hasSite ? "Sim: " + lead.website : "Não (Está em Vácuo Digital!)"}
-- Avaliação Google Maps: ${lead.rating ? lead.rating + ' estrelas (' + lead.user_ratings_total + ' avaliações)' : 'Não informado'}
-- Link de Demonstração Interativa da HLJ DEV criada para eles: ${demoUrl}
+ABORDAGEM SOLICITADA:
+- Mencione que viu a empresa no Google.
+- Se NÃO possui site atualmente (${hasSite ? "Possui site: " + lead.website : "Sem site atualmente"}): Destaque que reparou que estão sem site e pergunte de forma instigante se sabiam que podem estar perdendo novos clientes para a concorrência todos os dias por causa disso.
+- Se JÁ possui site: Destaque que viu o negócio no Google e que é possível otimizar e melhorar muito o posicionamento digital deles para atrair e converter ainda mais clientes.
+- Apresente o portfólio da HLJ DEV como solução de alta performance: ${portfolioUrl}
 
-TOM DA ABORDAGEM: ${waTone.toUpperCase()}
-- tom CONSULTIVO: Foca em otimização, profissionalismo, dores de posicionamento local e como a demonstração resolve isso.
-- tom DIRETO: Mensagem extremamente curta, pragmática, instigando curiosidade para ver a demonstração no link.
-- tom URGENTE: Foca em uma oportunidade especial por tempo limitado para a região/nicho deles.
+TOM DA MENSAGEM: ${waTone.toUpperCase()}
+- tom CONSULTIVO: Foca em otimização, profissionalismo e conversão de clientes locais.
+- tom DIRETO: Mensagem objetiva, perspicaz e muito clara.
+- tom URGENTE: Foca na perda diária de clientes para concorrentes.
 
 REGRAS:
-1. Comece com uma saudação amigável e direta (ex: "Olá, tudo bem?").
-2. Seja conciso (máximo de 3 parágrafos curtos, ideal para ler no celular).
-3. Não use placeholders como [Nome do Lead], use o nome real "${cleanName}" ou trate profissionalmente.
-4. Inclua obrigatoriamente a URL de demonstração: ${demoUrl}.
-5. Use emojis moderadamente para destacar pontos importantes.
-6. Retorne APENAS o texto da mensagem, sem explicações nem aspas.`;
+1. Comece com uma saudação amigável (ex: "Olá! Tudo bem?").
+2. Seja persuasivo e conciso (ideal para leitura no celular).
+3. Não use placeholders como [Nome do Lead], use o nome real "${cleanName}".
+4. Inclua a URL do portfólio: ${portfolioUrl}.
+5. Retorne APENAS o texto final da mensagem, sem aspas nem explicações.`;
 
       const { data: sysConfig } = await supabase.from("config_sistema").select("*").single();
 
@@ -208,8 +208,14 @@ REGRAS:
       console.error(err);
       const company = lead.empresa || lead.nome;
       const cleanName = company.split(/[|:-]/)[0].trim();
-      const demoUrl = `${window.location.origin}/demo/${companySlug}?id=${lead.id}`;
-      setWaMessage(`Olá! Tudo bem?\n\nNotei a atuação da ${cleanName} e reparei que vocês ainda não têm um posicionamento digital otimizado. Criei uma demonstração exclusiva de como a presença de vocês poderia ficar na web:\n\n👉 ${demoUrl}\n\nO que achou da prévia?`);
+      const portfolioUrl = "https://www.hljdev.com.br";
+      const hasSite = lead.website && lead.website.trim() !== "";
+      
+      const fallbackMsg = hasSite
+        ? `Olá! Tudo bem?\n\nVi a ${cleanName} no Google e notei que podemos melhorar e otimizar o posicionamento digital de vocês para atrair e converter ainda mais clientes.\n\nConfira nosso portfólio de cases de alta performance:\n👉 ${portfolioUrl}\n\nPodemos conversar sobre como impulsionar suas vendas?`
+        : `Olá! Tudo bem?\n\nVi a ${cleanName} no Google e reparei que vocês ainda não possuem um site otimizado. Sabia que podem estar perdendo novos clientes para a concorrência todos os dias por causa disso?\n\nVeja nosso portfólio e como podemos transformar a presença de vocês na internet:\n👉 ${portfolioUrl}\n\nPodemos conversar sobre como atrair mais clientes para a sua empresa?`;
+        
+      setWaMessage(fallbackMsg);
     } finally {
       setIsGeneratingWA(false);
     }
@@ -267,8 +273,13 @@ REGRAS:
     const company = lead.empresa || lead.nome;
     const cleanName = company.split(/[|:-]/)[0].trim();
     const portfolioUrl = "https://www.hljdev.com.br";
-    const message = encodeURIComponent(`Olá! Notei a atuação da ${cleanName} e gostaria de apresentar nosso portfólio de sites e sistemas de alta performance de elite: ${portfolioUrl}`);
-    window.open(`https://wa.me/${finalPhone}?text=${message}`, '_blank');
+    const hasSite = lead.website && lead.website.trim() !== "";
+    
+    const messageText = hasSite
+      ? `Olá! Tudo bem? Vi a ${cleanName} no Google e notei que podemos melhorar e otimizar a presença digital de vocês para atrair e converter ainda mais clientes.\n\nConfira nosso portfólio de cases de alta performance: ${portfolioUrl}`
+      : `Olá! Tudo bem? Vi a ${cleanName} no Google e reparei que vocês estão sem site. Sabia que podem estar perdendo clientes para a concorrência todos os dias por causa disso?\n\nVeja nosso portfólio de alta performance e como podemos transformar suas vendas: ${portfolioUrl}`;
+      
+    window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent(messageText)}`, '_blank');
   };
 
   const handleTriggerN8N = async () => {

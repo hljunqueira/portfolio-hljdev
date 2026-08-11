@@ -33,7 +33,10 @@ const STATUS_COLS = [
 ];
 
 const fetchLeads = async () => {
-  const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, nome, empresa, whatsapp, telefone, email, status, origem, lead_score, score, website, rating, user_ratings_total, created_at, endereco, foto_url, categorias")
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return data ?? [];
 };

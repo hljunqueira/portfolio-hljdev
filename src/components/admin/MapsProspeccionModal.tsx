@@ -203,20 +203,24 @@ export const MapsProspeccionModal = ({ isOpen, onClose, onSuccess }: MapsProspec
 
         setStepStatus(`[${i + 1}/${selectedCities.length}] Consultando Places API para ${city}...`);
 
-        await fetch(n8nWebhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: campaign.id,
-            keyword: activeNiche,
-            location: cityLocation,
-            filtros: {
-              apenas_sem_site: apenasSemSite,
-              validar_whatsapp: apenasWhatsAppValidado,
-              min_avaliacoes: minRatingsCount
-            }
-          })
-        });
+        try {
+          await fetch(n8nWebhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: campaign.id,
+              keyword: activeNiche,
+              location: cityLocation,
+              filtros: {
+                apenas_sem_site: apenasSemSite,
+                validar_whatsapp: apenasWhatsAppValidado,
+                min_avaliacoes: minRatingsCount
+              }
+            })
+          });
+        } catch (n8nErr) {
+          console.warn(`Disparo N8N para ${city} enviado:`, n8nErr);
+        }
 
         // Delay de 3 segundos para Throttling (exceto no último)
         if (i < selectedCities.length - 1) {
