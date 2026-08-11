@@ -75,9 +75,30 @@ const cases = [
     title: "Dumar Móveis",
     category: "Vitrine Digital",
     result: "Aumento real em leads de luxo",
-    image: "/dumar-print.png",
+    image: "/dumar.png",
     link: "https://dumarplanejados.com.br"
   },
+  {
+    title: "Up Ideias",
+    category: "SaaS & Validação",
+    result: "Gestão interativa de ideias de negócios",
+    image: "/upideias.png",
+    link: "https://app-upideias.vercel.app/"
+  },
+  {
+    title: "MDR Informática",
+    category: "E-commerce & Serviços",
+    result: "Catálogo e funil direto no WhatsApp",
+    image: "/mdr.png",
+    link: "https://mdrinformaticaecelulares.com.br/"
+  },
+  {
+    title: "Salon Art",
+    category: "Posicionamento Premium",
+    result: "Conversão de clientes em estética e beleza",
+    image: "/salonart.png",
+    link: "https://salonart.com.br/"
+  }
 ];
 
 const Shop = () => {
