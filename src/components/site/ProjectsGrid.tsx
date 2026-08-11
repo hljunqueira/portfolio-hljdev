@@ -16,53 +16,53 @@ export type Project = {
 
 const defaultProjects: Project[] = [
   {
-    title: "Triagem Automatizada e Gestão (Isabel Cunha RH)",
-    description: "A consultoria perdia semanas qualificando candidatos via WhatsApp e e-mail. Construímos uma plataforma do zero que automatiza e centraliza todo o pipeline de contratação.",
+    title: "Isabel Cunha RH — Plataforma de Recrutamento & Seleção",
+    description: "Plataforma web criada para automatizar a triagem de candidatos, simplificar o envio de currículos e agilizar todo o processo seletivo do RH.",
     image: "/isabel-print.png",
-    status: "Case de Sucesso",
+    status: "Recrutamento & RH",
     featuresLeft: ["Poupou 80% do tempo dos Analistas de RH", "Portal Self-Service para Candidatos"],
-    featuresRight: ["Relatórios Instantâneos de Vagas", "Fim da desorganização de Currículos PDF"],
-    techs: ["SaaS Proprietário", "Alta Escalabilidade", "Dados Seguros"],
+    featuresRight: ["Relatórios Instantâneos de Vagas", "Organização Automática de Currículos"],
+    techs: ["SaaS & Gestão", "Automação RH", "Nuvem Segura"],
     liveDemo: "https://isabelcunharh.com.br",
   },
   {
-    title: "Vitrine Digital Premium (Dumar Móveis)",
-    description: "Eles faziam projetos incríveis, mas a presença online amadora afastava clientes high-ticket. Entregamos uma vitrine profissional otimizada para capturar leads diretos no WhatsApp da equipe de vendas.",
+    title: "Dumar Móveis — Planejados & Ambientes de Luxo",
+    description: "Vitrine digital de alto padrão desenvolvida para apresentar projetos de interiores exclusivos e direcionar leads qualificados ao WhatsApp de vendas.",
     image: "/dumar.png",
-    status: "Impacto Imediato",
-    featuresLeft: ["Exibição de Projetos em Alta Resolução", "Funil de Captação Rápida no Mobile"],
-    featuresRight: ["Carregamento Ultra-rápido (SEO Forte)"],
-    techs: ["Design UI/UX", "Plataforma Otimizada"],
+    status: "Móveis & Arquitetura",
+    featuresLeft: ["Catálogo em Alta Resolução", "Captação Rápida no Mobile"],
+    featuresRight: ["Carregamento Ultra-rápido & SEO"],
+    techs: ["Design UI/UX", "Móveis Planejados", "WhatsApp Funnel"],
     liveDemo: "https://dumarplanejados.com.br",
   },
   {
-    title: "Plataforma de Ideias & Validação (Up Ideias)",
-    description: "Plataforma interativa desenvolvida para transformar e gerenciar ideias de negócios de forma ágil, integrada e moderna.",
+    title: "Up Ideias — Gestão & Validação de Negócios",
+    description: "Plataforma interativa projetada para organizar, estruturar e validar novas ideias de produtos e negócios de forma simples, moderna e colaborativa.",
     image: "/upideias.png",
-    status: "SaaS Ativo",
-    featuresLeft: ["Dashboard Interativo de Projetos", "Fluxo de Validação Ágil"],
-    featuresRight: ["Interface de Alta Performance"],
-    techs: ["React", "Vite", "Cloud Infrastructure"],
+    status: "SaaS & Inovação",
+    featuresLeft: ["Dashboard Interativo de Projetos", "Validação Ágil de Ideias"],
+    featuresRight: ["Experiência Fluida & Responsiva"],
+    techs: ["SaaS & Inovação", "React & Cloud", "Interface Moderna"],
     liveDemo: "https://app-upideias.vercel.app/",
   },
   {
-    title: "Informática & Celulares (MDR Informática)",
-    description: "Plataforma completa de soluções e serviços em produtos de tecnologia, celulares e assistência técnica com captação direta.",
+    title: "MDR Informática — Soluções & Assistência Técnica",
+    description: "Plataforma comercial completa para apresentação de produtos, celulares, serviços de assistência técnica e atendimento direto ao cliente.",
     image: "/mdr.png",
-    status: "E-Commerce & Serviços",
-    featuresLeft: ["Catálogo Otimizado de Produtos", "Integração Direta com WhatsApp"],
-    featuresRight: ["Navegação Ultra-rápida no Mobile"],
-    techs: ["E-Commerce", "Sistemas Web", "UI/UX"],
+    status: "Tecnologia & Serviços",
+    featuresLeft: ["Exibição Clara de Produtos & Serviços", "Contato Direto via WhatsApp"],
+    featuresRight: ["Navegação Otimizada no Celular"],
+    techs: ["Tecnologia", "Assistência Técnica", "Vendas Online"],
     liveDemo: "https://mdrinformaticaecelulares.com.br/",
   },
   {
-    title: "Estética & Beleza Premium (Salon Art)",
-    description: "Plataforma moderna para posicionamento digital e conversão de clientes de alto valor no segmento de beleza e saúde.",
+    title: "Salon Art — Beleza & Estética Premium",
+    description: "Presença digital sofisticada para valorização de marca, apresentação de serviços de beleza e facilidade no agendamento de clientes.",
     image: "/salonart.png",
-    status: "Posicionamento Premium",
-    featuresLeft: ["Design Sofisticado & Elevação de Marca", "Conversão Direta de Agendamentos"],
-    featuresRight: ["SEO de Alta Performance"],
-    techs: ["Web Design", "SEO Otimizado", "WhatsApp Funnel"],
+    status: "Beleza & Estética",
+    featuresLeft: ["Design Elegante & Sofisticado", "Agendamento Direto via WhatsApp"],
+    featuresRight: ["Posicionamento de Autoridade"],
+    techs: ["Beleza & Estética", "SEO Local", "Web Design"],
     liveDemo: "https://salonart.com.br/",
   }
 ];
@@ -93,7 +93,7 @@ export function ProjectsGrid({ projects = defaultProjects }: { projects?: Projec
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>{p.title}</CardTitle>
                   {p.status && (
-                    <span className={`text-xs rounded-full px-2 py-1 ${p.status === "Produção" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>
+                    <span className="text-xs rounded-full px-2.5 py-0.5 bg-primary/10 text-primary font-semibold border border-primary/20 shrink-0">
                       {p.status}
                     </span>
                   )}

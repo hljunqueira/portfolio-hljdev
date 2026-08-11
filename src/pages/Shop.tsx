@@ -66,36 +66,36 @@ const solutions = [
 const cases = [
   {
     title: "Isabel Cunha RH",
-    category: "Sistema de Gestão",
+    category: "Recrutamento & RH",
     result: "Redução de 80% no tempo de triagem",
     image: "/isabel-print.png",
     link: "https://isabelcunharh.com.br"
   },
   {
     title: "Dumar Móveis",
-    category: "Vitrine Digital",
-    result: "Aumento real em leads de luxo",
+    category: "Móveis & Arquitetura",
+    result: "Aumento em leads de alto padrão",
     image: "/dumar.png",
     link: "https://dumarplanejados.com.br"
   },
   {
     title: "Up Ideias",
-    category: "SaaS & Validação",
-    result: "Gestão interativa de ideias de negócios",
+    category: "SaaS & Inovação",
+    result: "Gestão e validação ágil de projetos",
     image: "/upideias.png",
     link: "https://app-upideias.vercel.app/"
   },
   {
     title: "MDR Informática",
-    category: "E-commerce & Serviços",
-    result: "Catálogo e funil direto no WhatsApp",
+    category: "Tecnologia & Serviços",
+    result: "Atendimento e captação via WhatsApp",
     image: "/mdr.png",
     link: "https://mdrinformaticaecelulares.com.br/"
   },
   {
     title: "Salon Art",
-    category: "Posicionamento Premium",
-    result: "Conversão de clientes em estética e beleza",
+    category: "Beleza & Estética",
+    result: "Elevação de marca e agendamentos",
     image: "/salonart.png",
     link: "https://salonart.com.br/"
   }
