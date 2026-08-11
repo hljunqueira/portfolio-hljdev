@@ -66,38 +66,45 @@ const solutions = [
 const cases = [
   {
     title: "Isabel Cunha RH",
-    category: "Recrutamento & RH",
+    category: "Consultoria & RH",
     result: "Redução de 80% no tempo de triagem",
     image: "/isabel-print.png",
     link: "https://isabelcunharh.com.br"
   },
   {
-    title: "Dumar Móveis",
-    category: "Móveis & Arquitetura",
+    title: "Dumar Móveis Planejados",
+    category: "Móveis Sob Medida",
     result: "Aumento em leads de alto padrão",
     image: "/dumar.png",
     link: "https://dumarplanejados.com.br"
   },
   {
-    title: "Up Ideias",
-    category: "SaaS & Inovação",
-    result: "Gestão e validação ágil de projetos",
+    title: "UP Ideias",
+    category: "SaaS & Inteligência IA",
+    result: "Métricas do Instagram com IA e cursos",
     image: "/upideias.png",
     link: "https://app-upideias.vercel.app/"
   },
   {
-    title: "MDR Informática",
-    category: "Tecnologia & Serviços",
-    result: "Atendimento e captação via WhatsApp",
+    title: "MDR Informática & Celulares",
+    category: "Assistência & Tecnologia",
+    result: "Atendimento e vendas diretas no WhatsApp",
     image: "/mdr.png",
     link: "https://mdrinformaticaecelulares.com.br/"
   },
   {
     title: "Salon Art",
-    category: "Beleza & Estética",
-    result: "Elevação de marca e agendamentos",
+    category: "Nail Art & Estética Luxo",
+    result: "Elevação de marca e agendamentos exclusividade",
     image: "/salonart.png",
     link: "https://salonart.com.br/"
+  },
+  {
+    title: "ZapCar",
+    category: "Gestão Veicular & App",
+    result: "Proteção, laudo veicular e valorização FIPE",
+    image: "/appzapcar.png",
+    link: "https://appzapcar.com.br/"
   }
 ];
 
